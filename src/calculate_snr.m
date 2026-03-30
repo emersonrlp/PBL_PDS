@@ -8,10 +8,13 @@ function snr_db = calculate_snr(reference_signal, reconstructed_signal)
     % Outputs:
     %   snr_db               - Signal-to-Noise Ratio in dB (scalar)
 
+    ref = reference_signal(:);
+    rec = reconstructed_signal(:);
+
     % 1. Align the signals (Truncate to the minimum length)
-    min_len = min(length(reference_signal), length(reconstructed_signal));
-    ref_aligned = reference_signal(1:min_len);
-    rec_aligned = reconstructed_signal(1:min_len);
+    min_len = min(length(ref), length(rec));
+    ref_aligned = ref(1:min_len);
+    rec_aligned = rec(1:min_len);
 
     % 2. Calculate Signal Power (Mean of the squared reference values)
     signal_power = mean(ref_aligned .^ 2);
