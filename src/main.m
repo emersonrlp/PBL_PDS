@@ -27,6 +27,11 @@ fprintf(fid, 'Target Common Frequency: %d Hz\n\n', fs_target);
 % =========================================================================
 fprintf('2. Processing Signal 1 (15 kHz) and Calculating Metrics...\n'); fflush(stdout);
 
+% Original Signal 1's Spectrum
+fprintf('   -> Computing Original DTFT for Signal 1... \n'); fflush(stdout);
+[mag_x1_orig, w_orig1] = compute_dtft(x1_15k, res);
+f_axis_orig1 = (w_orig1 / (2*pi)) * fs_1;
+
 % A. Upsampling WITH Filter (The correct way)
 x1_up_filt = upsample_channel(x1_15k, L1, filt_order);
 
@@ -60,10 +65,22 @@ title('Signal 1 Upsampled WITH FIR Filter (Clean Spectrum)');
 xlabel('Frequency (Hz)'); ylabel('Magnitude');
 print(fig1, 'Evaluation_Signal_1.png', '-dpng', '-r300');
 
+% Save Original Signal 1 Spectrum Plot
+fig_orig1 = figure('Name', 'Original Signal 1', 'Visible', 'off');
+plot(f_axis_orig1, mag_x1_orig, 'b', 'LineWidth', 1.2); grid on; xlim([-fs_1/2, fs_1/2]);
+title('Original Signal 1 Spectrum (15 kHz)');
+xlabel('Frequency (Hz)'); ylabel('Magnitude');
+print(fig_orig1, 'Original_Signal_1.png', '-dpng', '-r300');
+
 % =========================================================================
 % 3. Signal 2 (10kHz) - Processing and Pipeline Evaluation
 % =========================================================================
 fprintf('3. Processing Signal 2 (10 kHz) and Calculating Metrics...\n'); fflush(stdout);
+
+% Original Signal 2's Spectrum
+fprintf('   -> Computing Original DTFT for Signal 2... \n'); fflush(stdout);
+[mag_x2_orig, w_orig2] = compute_dtft(x2_10k, res);
+f_axis_orig2 = (w_orig2 / (2*pi)) * fs_2;
 
 % A. Upsampling WITH Filter
 x2_up_filt = upsample_channel(x2_10k, L2, filt_order);
@@ -96,6 +113,13 @@ subplot(2,1,2); plot(f_axis_up, mag_x2_filt, 'b'); grid on; xlim([-fs_target/2, 
 title('Signal 2 Upsampled WITH FIR Filter');
 xlabel('Frequency (Hz)'); ylabel('Magnitude');
 print(fig_s2, 'Evaluation_Signal_2.png', '-dpng', '-r300');
+
+% Save Original Signal 2 Spectrum Plot
+fig_orig2 = figure('Name', 'Original Signal 2', 'Visible', 'off');
+plot(f_axis_orig2, mag_x2_orig, 'r', 'LineWidth', 1.2); grid on; xlim([-fs_2/2, fs_2/2]);
+title('Original Signal 2 Spectrum (10 kHz)');
+xlabel('Frequency (Hz)'); ylabel('Magnitude');
+print(fig_orig2, 'Original_Signal_2.png', '-dpng', '-r300');
 
 % =========================================================================
 % 4. Final Combination at 30 kHz
