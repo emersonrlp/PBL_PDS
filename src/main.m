@@ -68,7 +68,11 @@ fprintf('3. Processing Signal 2 (10 kHz) and Calculating Metrics...\n'); fflush(
 % A. Upsampling WITH Filter
 x2_up_filt = upsample_channel(x2_10k, L2, filt_order);
 
-% B. Evaluation (Roundtrip: Upsample -> Downsample back to 10kHz)
+% B. Upsampling WITHOUT Filter for Signal 2 (For plotting)
+x2_up_nofilt = zeros(1, length(x2_10k) * L2);
+x2_up_nofilt(1:L2:end) = x2_10k * L2;
+
+% C. Evaluation (Roundtrip: Upsample -> Downsample back to 10kHz)
 x2_recovered = downsample_channel(x2_up_filt, L2, filt_order);
 mse_x2 = calculate_mse(x2_10k, x2_recovered);
 snr_x2 = calculate_snr(x2_10k, x2_recovered);
@@ -78,9 +82,20 @@ fprintf(fid, 'SIGNAL 2 EVALUATION (10 kHz -> 30 kHz -> 10 kHz):\n');
 fprintf(fid, 'Mean Squared Error (MSE): %e\n', mse_x2);
 fprintf(fid, 'Signal-to-Noise Ratio (SNR): %.2f dB\n\n', snr_x2);
 
-% Compute DTFT for Signal 2
+% D. Compute DTFT for Signal 2
 fprintf('   -> Computing DTFT for Signal 2... \n'); fflush(stdout);
-[mag_x2_filt, ~] = compute_dtft(x2_up_filt, res);
+[mag_x2_nofilt, ~] = compute_dtft(x2_up_nofilt, res);
+[mag_x2_filt, ~]   = compute_dtft(x2_up_filt, res);
+
+% Save Signal 2 Plot
+fig_s2 = figure('Name', 'Signal 2: Filter Evaluation', 'Visible', 'off');
+subplot(2,1,1); plot(f_axis_up, mag_x2_nofilt, 'r'); grid on; xlim([-fs_target/2, fs_target/2]);
+title('Signal 2 Upsampled WITHOUT Filter');
+ylabel('Magnitude');
+subplot(2,1,2); plot(f_axis_up, mag_x2_filt, 'b'); grid on; xlim([-fs_target/2, fs_target/2]);
+title('Signal 2 Upsampled WITH FIR Filter');
+xlabel('Frequency (Hz)'); ylabel('Magnitude');
+print(fig_s2, 'Evaluation_Signal_2.png', '-dpng', '-r300');
 
 % =========================================================================
 % 4. Final Combination at 30 kHz
