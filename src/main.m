@@ -15,7 +15,7 @@ fs_target = 30000;
 L1 = fs_target / fs_1; % Upsampling factor for Signal 1 (L=2)
 L2 = fs_target / fs_2; % Upsampling factor for Signal 2 (L=3)
 filt_order = 150;
-res = 2000;
+res = 1000;
 
 % Create and open the text file for the metrics report
 fid = fopen('metrics_report.txt', 'w');
@@ -33,13 +33,16 @@ fprintf('   -> Computing Original DTFT for Signal 1... \n'); fflush(stdout);
 f_axis_orig1 = (w_orig1 / (2*pi)) * fs_1;
 
 % A. Upsampling WITH Filter (The correct way)
+fprintf('   -> Upsampling Signal 1 and filtering... \n'); fflush(stdout);
 x1_up_filt = upsample_channel(x1_15k, L1, filt_order);
 
 % B. Upsampling WITHOUT Filter (To prove the appearance of spectral images)
+fprintf('   -> Upsampling Signal 1 w/o filtering... \n'); fflush(stdout);
 x1_up_nofilt = zeros(1, length(x1_15k) * L1);
 x1_up_nofilt(1:L1:end) = x1_15k * L1;
 
 % C. Evaluation (Roundtrip: Upsample -> Downsample back to 15kHz)
+fprintf('   -> Roundtripping Signal 1... \n'); fflush(stdout);
 x1_recovered = downsample_channel(x1_up_filt, L1, filt_order);
 mse_x1 = calculate_mse(x1_15k, x1_recovered);
 snr_x1 = calculate_snr(x1_15k, x1_recovered);
@@ -50,8 +53,9 @@ fprintf(fid, 'Mean Squared Error (MSE): %e\n', mse_x1);
 fprintf(fid, 'Signal-to-Noise Ratio (SNR): %.2f dB\n\n', snr_x1);
 
 % D. Compute DTFT to visualize the filter's action
-fprintf('   -> Computing DTFTs for Signal 1... \n'); fflush(stdout);
+fprintf('   -> Computing DTFTs for no filtered Signal 1... \n'); fflush(stdout);
 [mag_x1_nofilt, w_up] = compute_dtft(x1_up_nofilt, res);
+fprintf('   -> Computing DTFTs for filtered Signal 1... \n'); fflush(stdout);
 [mag_x1_filt, ~]      = compute_dtft(x1_up_filt, res);
 f_axis_up = (w_up / (2*pi)) * fs_target;
 
@@ -83,13 +87,16 @@ fprintf('   -> Computing Original DTFT for Signal 2... \n'); fflush(stdout);
 f_axis_orig2 = (w_orig2 / (2*pi)) * fs_2;
 
 % A. Upsampling WITH Filter
+fprintf('   -> Upsampling Signal 2 and filtering... \n'); fflush(stdout);
 x2_up_filt = upsample_channel(x2_10k, L2, filt_order);
 
 % B. Upsampling WITHOUT Filter for Signal 2 (For plotting)
+fprintf('   -> Upsampling Signal 2 w/o filtering... \n'); fflush(stdout);
 x2_up_nofilt = zeros(1, length(x2_10k) * L2);
 x2_up_nofilt(1:L2:end) = x2_10k * L2;
 
 % C. Evaluation (Roundtrip: Upsample -> Downsample back to 10kHz)
+fprintf('   -> Roundtripping Signal 2... \n'); fflush(stdout);
 x2_recovered = downsample_channel(x2_up_filt, L2, filt_order);
 mse_x2 = calculate_mse(x2_10k, x2_recovered);
 snr_x2 = calculate_snr(x2_10k, x2_recovered);
@@ -100,8 +107,9 @@ fprintf(fid, 'Mean Squared Error (MSE): %e\n', mse_x2);
 fprintf(fid, 'Signal-to-Noise Ratio (SNR): %.2f dB\n\n', snr_x2);
 
 % D. Compute DTFT for Signal 2
-fprintf('   -> Computing DTFT for Signal 2... \n'); fflush(stdout);
+fprintf('   -> Computing DTFTs for no filtered Signal 2... \n'); fflush(stdout);
 [mag_x2_nofilt, ~] = compute_dtft(x2_up_nofilt, res);
+fprintf('   -> Computing DTFTs for filtered Signal 2... \n'); fflush(stdout);
 [mag_x2_filt, ~]   = compute_dtft(x2_up_filt, res);
 
 % Save Signal 2 Plot
