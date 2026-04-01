@@ -4,8 +4,10 @@
 pkg load signal;
 clear; clc;
 
-% 1. Setup and Initialization
-fprintf('1. Starting DSP Pipeline and Loading Data...\n'); fflush(stdout);
+% =========================================================================
+% SECTION 1: SETUP AND INITIALIZATION
+% =========================================================================
+fprintf('\n[1/4] STARTING DSP PIPELINE & LOADING DATA...\n'); fflush(stdout);
 load('x1_e_x2.mat');
 
 fs_1 = 15000;
@@ -23,131 +25,149 @@ fprintf(fid, '--- DSP PROJECT METRICS REPORT ---\n');
 fprintf(fid, 'Target Common Frequency: %d Hz\n\n', fs_target);
 
 % =========================================================================
-% 2. Signal 1 (15kHz) - Processing and Pipeline Evaluation
+% SECTION 2: SIGNAL 1 (15 kHz) - PROCESSING AND EVALUATION
 % =========================================================================
-fprintf('2. Processing Signal 1 (15 kHz) and Calculating Metrics...\n'); fflush(stdout);
+fprintf('[2/4] PROCESSING SIGNAL 1 (15 kHz)...\n'); fflush(stdout);
 
-% Original Signal 1's Spectrum
-fprintf('   -> Computing Original DTFT for Signal 1... \n'); fflush(stdout);
+% 2.1 - Original Signal DTFT
+fprintf('      -> Computing Original DTFT...\n'); fflush(stdout);
 [mag_x1_orig, w_orig1] = compute_dtft(x1_15k, res);
 f_axis_orig1 = (w_orig1 / (2*pi)) * fs_1;
 
-% A. Upsampling WITH Filter (The correct way)
-fprintf('   -> Upsampling Signal 1 and filtering... \n'); fflush(stdout);
+% 2.2 - Upsampling (With and Without Filter)
+fprintf('      -> Upsampling (L=%d) and filtering...\n', L1); fflush(stdout);
 x1_up_filt = upsample_channel(x1_15k, L1, filt_order);
 
-% B. Upsampling WITHOUT Filter (To prove the appearance of spectral images)
-fprintf('   -> Upsampling Signal 1 w/o filtering... \n'); fflush(stdout);
+fprintf('      -> Upsampling WITHOUT filtering (for visualization)...\n'); fflush(stdout);
 x1_up_nofilt = zeros(1, length(x1_15k) * L1);
-x1_up_nofilt(1:L1:end) = x1_15k * L1;
+x1_up_nofilt(1:L1:end) = x1_15k(:)' * L1; % Forced row vector
 
-% C. Evaluation (Roundtrip: Upsample -> Downsample back to 15kHz)
-fprintf('   -> Roundtripping Signal 1... \n'); fflush(stdout);
+% 2.3 - Roundtrip Evaluation (Recovering the signal)
+fprintf('      -> Downsampling to recover signal and calculate metrics...\n'); fflush(stdout);
 x1_recovered = downsample_channel(x1_up_filt, L1, filt_order);
 mse_x1 = calculate_mse(x1_15k, x1_recovered);
 snr_x1 = calculate_snr(x1_15k, x1_recovered);
 
-% Write Signal 1 metrics to file
 fprintf(fid, 'SIGNAL 1 EVALUATION (15 kHz -> 30 kHz -> 15 kHz):\n');
 fprintf(fid, 'Mean Squared Error (MSE): %e\n', mse_x1);
 fprintf(fid, 'Signal-to-Noise Ratio (SNR): %.2f dB\n\n', snr_x1);
 
-% D. Compute DTFT to visualize the filter's action
-fprintf('   -> Computing DTFTs for no filtered Signal 1... \n'); fflush(stdout);
+% 2.4 - DTFTs for Plots
+fprintf('      -> Computing DTFTs for Plotting...\n'); fflush(stdout);
 [mag_x1_nofilt, w_up] = compute_dtft(x1_up_nofilt, res);
-fprintf('   -> Computing DTFTs for filtered Signal 1... \n'); fflush(stdout);
 [mag_x1_filt, ~]      = compute_dtft(x1_up_filt, res);
+[mag_x1_rec, ~]       = compute_dtft(x1_recovered, res);
 f_axis_up = (w_up / (2*pi)) * fs_target;
 
-% Save Signal 1 Plot
-fig1 = figure('Name', 'Signal 1: Filter Evaluation', 'Visible', 'off');
-subplot(2,1,1); plot(f_axis_up, mag_x1_nofilt, 'r'); grid on; xlim([-fs_target/2, fs_target/2]);
-title('Signal 1 Upsampled WITHOUT Filter (Notice the False Images)');
-ylabel('Magnitude');
-subplot(2,1,2); plot(f_axis_up, mag_x1_filt, 'b'); grid on; xlim([-fs_target/2, fs_target/2]);
-title('Signal 1 Upsampled WITH FIR Filter (Clean Spectrum)');
-xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig1, 'Evaluation_Signal_1.png', '-dpng', '-r300');
+% --- PLOT 1A: Upsampling Filter Evaluation ---
+fig_eval1 = figure('Name', 'Signal 1: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
+subplot(2,1,1); plot(f_axis_up, mag_x1_nofilt, 'r'); grid on;
+xlim([-fs_target/2, fs_target/2]); ylim([0, max(mag_x1_nofilt)*1.05]);
+set(gca, 'XTick', -15000:2500:15000); % Force ticks every 2.5kHz
+title('Signal 1 Upsampled WITHOUT Filter (Notice the False Images)'); ylabel('Magnitude');
 
-% Save Original Signal 1 Spectrum Plot
-fig_orig1 = figure('Name', 'Original Signal 1', 'Visible', 'off');
-plot(f_axis_orig1, mag_x1_orig, 'b', 'LineWidth', 1.2); grid on; xlim([-fs_1/2, fs_1/2]);
-title('Original Signal 1 Spectrum (15 kHz)');
-xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig_orig1, 'Original_Signal_1.png', '-dpng', '-r300');
+subplot(2,1,2); plot(f_axis_up, mag_x1_filt, 'b'); grid on;
+xlim([-fs_target/2, fs_target/2]); ylim([0, max(mag_x1_filt)*1.05]);
+set(gca, 'XTick', -15000:2500:15000);
+title('Signal 1 Upsampled WITH FIR Filter (Clean Spectrum)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
+print(fig_eval1, '1A_Eval_Upsample_Sig1.png', '-dpng', '-r400');
+
+% --- PLOT 1B: Original vs Reconstructed ---
+fig_rec1 = figure('Name', 'Signal 1: Original vs Recovered', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
+subplot(2,1,1); plot(f_axis_orig1, mag_x1_orig, 'k'); grid on;
+xlim([-fs_1/2, fs_1/2]); ylim([0, max(mag_x1_orig)*1.05]);
+set(gca, 'XTick', -7500:1000:7500); % Ticks every 1000Hz (Highlights 3kHz perfectly)
+title('ORIGINAL Signal 1 Spectrum (15 kHz)'); ylabel('Magnitude');
+
+subplot(2,1,2); plot(f_axis_orig1, mag_x1_rec, 'b'); grid on;
+xlim([-fs_1/2, fs_1/2]); ylim([0, max(mag_x1_rec)*1.05]);
+set(gca, 'XTick', -7500:1000:7500);
+title('RECOVERED Signal 1 Spectrum (15 kHz) - Visual Proof of Integrity'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
+print(fig_rec1, '1B_Original_vs_Recovered_Sig1.png', '-dpng', '-r400');
+
 
 % =========================================================================
-% 3. Signal 2 (10kHz) - Processing and Pipeline Evaluation
+% SECTION 3: SIGNAL 2 (10 kHz) - PROCESSING AND EVALUATION
 % =========================================================================
-fprintf('3. Processing Signal 2 (10 kHz) and Calculating Metrics...\n'); fflush(stdout);
+fprintf('\n[3/4] PROCESSING SIGNAL 2 (10 kHz)...\n'); fflush(stdout);
 
-% Original Signal 2's Spectrum
-fprintf('   -> Computing Original DTFT for Signal 2... \n'); fflush(stdout);
+% 3.1 - Original Signal DTFT
+fprintf('      -> Computing Original DTFT...\n'); fflush(stdout);
 [mag_x2_orig, w_orig2] = compute_dtft(x2_10k, res);
 f_axis_orig2 = (w_orig2 / (2*pi)) * fs_2;
 
-% A. Upsampling WITH Filter
-fprintf('   -> Upsampling Signal 2 and filtering... \n'); fflush(stdout);
+% 3.2 - Upsampling (With and Without Filter)
+fprintf('      -> Upsampling (L=%d) and filtering...\n', L2); fflush(stdout);
 x2_up_filt = upsample_channel(x2_10k, L2, filt_order);
 
-% B. Upsampling WITHOUT Filter for Signal 2 (For plotting)
-fprintf('   -> Upsampling Signal 2 w/o filtering... \n'); fflush(stdout);
+fprintf('      -> Upsampling WITHOUT filtering (for visualization)...\n'); fflush(stdout);
 x2_up_nofilt = zeros(1, length(x2_10k) * L2);
-x2_up_nofilt(1:L2:end) = x2_10k * L2;
+x2_up_nofilt(1:L2:end) = x2_10k(:)' * L2; % Forced row vector
 
-% C. Evaluation (Roundtrip: Upsample -> Downsample back to 10kHz)
-fprintf('   -> Roundtripping Signal 2... \n'); fflush(stdout);
+% 3.3 - Roundtrip Evaluation (Recovering the signal)
+fprintf('      -> Downsampling to recover signal and calculate metrics...\n'); fflush(stdout);
 x2_recovered = downsample_channel(x2_up_filt, L2, filt_order);
 mse_x2 = calculate_mse(x2_10k, x2_recovered);
 snr_x2 = calculate_snr(x2_10k, x2_recovered);
 
-% Write Signal 2 metrics to file
 fprintf(fid, 'SIGNAL 2 EVALUATION (10 kHz -> 30 kHz -> 10 kHz):\n');
 fprintf(fid, 'Mean Squared Error (MSE): %e\n', mse_x2);
 fprintf(fid, 'Signal-to-Noise Ratio (SNR): %.2f dB\n\n', snr_x2);
 
-% D. Compute DTFT for Signal 2
-fprintf('   -> Computing DTFTs for no filtered Signal 2... \n'); fflush(stdout);
+% 3.4 - DTFTs for Plots
+fprintf('      -> Computing DTFTs for Plotting...\n'); fflush(stdout);
 [mag_x2_nofilt, ~] = compute_dtft(x2_up_nofilt, res);
-fprintf('   -> Computing DTFTs for filtered Signal 2... \n'); fflush(stdout);
 [mag_x2_filt, ~]   = compute_dtft(x2_up_filt, res);
+[mag_x2_rec, ~]    = compute_dtft(x2_recovered, res);
 
-% Save Signal 2 Plot
-fig_s2 = figure('Name', 'Signal 2: Filter Evaluation', 'Visible', 'off');
-subplot(2,1,1); plot(f_axis_up, mag_x2_nofilt, 'r'); grid on; xlim([-fs_target/2, fs_target/2]);
-title('Signal 2 Upsampled WITHOUT Filter');
-ylabel('Magnitude');
-subplot(2,1,2); plot(f_axis_up, mag_x2_filt, 'b'); grid on; xlim([-fs_target/2, fs_target/2]);
-title('Signal 2 Upsampled WITH FIR Filter');
-xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig_s2, 'Evaluation_Signal_2.png', '-dpng', '-r300');
+% --- PLOT 2A: Upsampling Filter Evaluation ---
+fig_eval2 = figure('Name', 'Signal 2: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
+subplot(2,1,1); plot(f_axis_up, mag_x2_nofilt, 'r'); grid on;
+xlim([-fs_target/2, fs_target/2]); ylim([0, max(mag_x2_nofilt)*1.05]);
+set(gca, 'XTick', -15000:2500:15000);
+title('Signal 2 Upsampled WITHOUT Filter'); ylabel('Magnitude');
 
-% Save Original Signal 2 Spectrum Plot
-fig_orig2 = figure('Name', 'Original Signal 2', 'Visible', 'off');
-plot(f_axis_orig2, mag_x2_orig, 'r', 'LineWidth', 1.2); grid on; xlim([-fs_2/2, fs_2/2]);
-title('Original Signal 2 Spectrum (10 kHz)');
-xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig_orig2, 'Original_Signal_2.png', '-dpng', '-r300');
+subplot(2,1,2); plot(f_axis_up, mag_x2_filt, 'b'); grid on;
+xlim([-fs_target/2, fs_target/2]); ylim([0, max(mag_x2_filt)*1.05]);
+set(gca, 'XTick', -15000:2500:15000);
+title('Signal 2 Upsampled WITH FIR Filter'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
+print(fig_eval2, '2A_Eval_Upsample_Sig2.png', '-dpng', '-r400');
+
+% --- PLOT 2B: Original vs Reconstructed ---
+fig_rec2 = figure('Name', 'Signal 2: Original vs Recovered', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
+subplot(2,1,1); plot(f_axis_orig2, mag_x2_orig, 'k'); grid on;
+xlim([-fs_2/2, fs_2/2]); ylim([0, max(mag_x2_orig)*1.05]);
+set(gca, 'XTick', -5000:1000:5000); % Ticks every 1000Hz
+title('ORIGINAL Signal 2 Spectrum (10 kHz)'); ylabel('Magnitude');
+
+subplot(2,1,2); plot(f_axis_orig2, mag_x2_rec, 'b'); grid on;
+xlim([-fs_2/2, fs_2/2]); ylim([0, max(mag_x2_rec)*1.05]);
+set(gca, 'XTick', -5000:1000:5000);
+title('RECOVERED Signal 2 Spectrum (10 kHz) - Visual Proof of Integrity'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
+print(fig_rec2, '2B_Original_vs_Recovered_Sig2.png', '-dpng', '-r400');
+
 
 % =========================================================================
-% 4. Final Combination at 30 kHz
+% SECTION 4: FINAL COMBINATION AT 30 kHz
 % =========================================================================
-fprintf('4. Combining Signals at 30 kHz...\n'); fflush(stdout);
+fprintf('\n[4/4] COMBINING SIGNALS AT 30 kHz...\n'); fflush(stdout);
 
 % Align vectors to the same size before summing
 min_len = min(length(x1_up_filt), length(x2_up_filt));
 final_audio = x1_up_filt(1:min_len) + x2_up_filt(1:min_len);
 
-fprintf('   -> Computing Final Combined DTFT...\n'); fflush(stdout);
+fprintf('      -> Computing Final Combined DTFT...\n'); fflush(stdout);
 [mag_final, ~] = compute_dtft(final_audio, res);
 
-% Save Final Combined Plot
-fig2 = figure('Name', 'Final Combined Audio', 'Visible', 'off');
-plot(f_axis_up, mag_final, 'k', 'LineWidth', 1.2); grid on; xlim([-fs_target/2, fs_target/2]);
-title('Final Combined Signal Spectrum (30 kHz)');
+% --- PLOT 3: Final Combined Spectrum ---
+fig_final = figure('Name', 'Final Combined Audio', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
+plot(f_axis_up, mag_final, 'k', 'LineWidth', 1.2); grid on;
+xlim([-fs_target/2, fs_target/2]); ylim([0, max(mag_final)*1.05]);
+set(gca, 'XTick', -15000:1500:15000); % Detailed ticks for the final wide spectrum
+title('FINAL COMBINED SIGNAL SPECTRUM (30 kHz)');
 xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig2, 'Final_Combined_Spectrum.png', '-dpng', '-r300');
+print(fig_final, '3_Final_Combined_Spectrum.png', '-dpng', '-r500'); % Even higher resolution for the finale
 
 % Close the text file and finalize
 fclose(fid);
-fprintf('5. Pipeline Complete! Check the saved .txt and .png files in your folder.\n'); fflush(stdout);
+fprintf('\n>>> PIPELINE COMPLETE! All high-res plots and metrics saved successfully. <<<\n\n'); fflush(stdout);
