@@ -63,7 +63,7 @@ f_axis_up = (w_up / (2*pi)) * fs_target;
 fig_eval1 = figure('Name', 'Signal 1: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
 subplot(2,1,1); plot(f_axis_up, mag_x1_nofilt, 'r'); grid on;
 xlim([-fs_target/2, fs_target/2]); ylim([0, max(mag_x1_nofilt)*1.05]);
-set(gca, 'XTick', -15000:2500:15000); % Force ticks every 2.5kHz
+set(gca, 'XTick', -15000:2500:15000);
 title('Signal 1 Upsampled WITHOUT Filter (Notice the False Images)'); ylabel('Magnitude');
 
 subplot(2,1,2); plot(f_axis_up, mag_x1_filt, 'b'); grid on;
@@ -72,17 +72,25 @@ set(gca, 'XTick', -15000:2500:15000);
 title('Signal 1 Upsampled WITH FIR Filter (Clean Spectrum)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
 print(fig_eval1, '1A_Eval_Upsample_Sig1.png', '-dpng', '-r400');
 
+% --- PLOT 1A-EXTRA: Filtered Signal ---
+fig_filt1 = figure('Name', 'Signal 1: Filtered Zoom', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_up, mag_x1_filt, 'b', 'LineWidth', 1.2); grid on;
+xlim([-5000, 5000]); ylim([0, max(mag_x1_filt)*1.05]);
+set(gca, 'XTick', -5000:500:5000);
+title('Signal 1 Upsampled WITH FIR Filter (ISOLATED & ZOOMED)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
+print(fig_filt1, '1A_Extra_Filtered_Zoom_Sig1.png', '-dpng', '-r400');
+
 % --- PLOT 1B: Original vs Reconstructed ---
 fig_rec1 = figure('Name', 'Signal 1: Original vs Recovered', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
 subplot(2,1,1); plot(f_axis_orig1, mag_x1_orig, 'k'); grid on;
-xlim([-fs_1/2, fs_1/2]); ylim([0, max(mag_x1_orig)*1.05]);
-set(gca, 'XTick', -7500:1000:7500); % Ticks every 1000Hz (Highlights 3kHz perfectly)
+xlim([-5000, 5000]); ylim([0, max(mag_x1_orig)*1.05]);
+set(gca, 'XTick', -5000:500:5000);
 title('ORIGINAL Signal 1 Spectrum (15 kHz)'); ylabel('Magnitude');
 
 subplot(2,1,2); plot(f_axis_orig1, mag_x1_rec, 'b'); grid on;
-xlim([-fs_1/2, fs_1/2]); ylim([0, max(mag_x1_rec)*1.05]);
-set(gca, 'XTick', -7500:1000:7500);
-title('RECOVERED Signal 1 Spectrum (15 kHz) - Visual Proof of Integrity'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
+xlim([-5000, 5000]); ylim([0, max(mag_x1_rec)*1.05]);
+set(gca, 'XTick', -5000:500:5000);
+title('RECOVERED Signal 1 Spectrum (15 kHz)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
 print(fig_rec1, '1B_Original_vs_Recovered_Sig1.png', '-dpng', '-r400');
 
 
@@ -133,17 +141,25 @@ set(gca, 'XTick', -15000:2500:15000);
 title('Signal 2 Upsampled WITH FIR Filter'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
 print(fig_eval2, '2A_Eval_Upsample_Sig2.png', '-dpng', '-r400');
 
+% --- PLOT 2A-EXTRA: Filtered Signal ---
+fig_filt2 = figure('Name', 'Signal 2: Filtered Zoom', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_up, mag_x2_filt, 'b', 'LineWidth', 1.2); grid on;
+xlim([-4500, 4500]); ylim([0, max(mag_x2_filt)*1.05]);
+set(gca, 'XTick', -4500:500:4500);
+title('Signal 2 Upsampled WITH FIR Filter (ISOLATED & ZOOMED)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
+print(fig_filt2, '2A_Extra_Filtered_Zoom_Sig2.png', '-dpng', '-r400');
+
 % --- PLOT 2B: Original vs Reconstructed ---
 fig_rec2 = figure('Name', 'Signal 2: Original vs Recovered', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
 subplot(2,1,1); plot(f_axis_orig2, mag_x2_orig, 'k'); grid on;
-xlim([-fs_2/2, fs_2/2]); ylim([0, max(mag_x2_orig)*1.05]);
-set(gca, 'XTick', -5000:1000:5000); % Ticks every 1000Hz
+xlim([-4500, 4500]); ylim([0, max(mag_x2_orig)*1.05]);
+set(gca, 'XTick', -4500:500:4500);
 title('ORIGINAL Signal 2 Spectrum (10 kHz)'); ylabel('Magnitude');
 
 subplot(2,1,2); plot(f_axis_orig2, mag_x2_rec, 'b'); grid on;
-xlim([-fs_2/2, fs_2/2]); ylim([0, max(mag_x2_rec)*1.05]);
-set(gca, 'XTick', -5000:1000:5000);
-title('RECOVERED Signal 2 Spectrum (10 kHz) - Visual Proof of Integrity'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
+xlim([-4500, 4500]); ylim([0, max(mag_x2_rec)*1.05]);
+set(gca, 'XTick', -4500:500:4500);
+title('RECOVERED Signal 2 Spectrum (10 kHz)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
 print(fig_rec2, '2B_Original_vs_Recovered_Sig2.png', '-dpng', '-r400');
 
 
@@ -162,11 +178,11 @@ fprintf('      -> Computing Final Combined DTFT...\n'); fflush(stdout);
 % --- PLOT 3: Final Combined Spectrum ---
 fig_final = figure('Name', 'Final Combined Audio', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
 plot(f_axis_up, mag_final, 'k', 'LineWidth', 1.2); grid on;
-xlim([-fs_target/2, fs_target/2]); ylim([0, max(mag_final)*1.05]);
-set(gca, 'XTick', -15000:1500:15000); % Detailed ticks for the final wide spectrum
-title('FINAL COMBINED SIGNAL SPECTRUM (30 kHz)');
+xlim([-5000, 5000]); ylim([0, max(mag_final)*1.05]);
+set(gca, 'XTick', -5000:500:5000);
+title('FINAL COMBINED SIGNAL SPECTRUM (30 kHz) - ZOOMED');
 xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig_final, '3_Final_Combined_Spectrum.png', '-dpng', '-r500'); % Even higher resolution for the finale
+print(fig_final, '3_Final_Combined_Spectrum.png', '-dpng', '-r500');
 
 % Close the text file and finalize
 fclose(fid);
