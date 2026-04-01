@@ -183,6 +183,42 @@ title('FINAL COMBINED SIGNAL SPECTRUM (30 kHz) - ZOOMED');
 xlabel('Frequency (Hz)'); ylabel('Magnitude');
 print(fig_final, '3_Final_Combined_Spectrum.png', '-dpng', '-r500');
 
+% =========================================================================
+% SECTION 5: FIR FILTERS FREQUENCY RESPONSE ANALYSIS
+% =========================================================================
+fprintf('\n[5/5] GENERATING FIR FILTER RESPONSES...\n'); fflush(stdout);
+
+% Design the exact filters used in the upsampling/downsampling functions
+Wn_1 = 1 / L1; % Cutoff for Signal 1
+Wn_2 = 1 / L2; % Cutoff for Signal 2
+h_filt1 = fir1(filt_order, Wn_1);
+h_filt2 = fir1(filt_order, Wn_2);
+
+% Compute frequency responses
+[H1, f_H1] = freqz(h_filt1, 1, 2048, fs_target);
+[H2, f_H2] = freqz(h_filt2, 1, 2048, fs_target);
+
+% Convert to Decibels (dB)
+mag_dB_H1 = 20*log10(abs(H1));
+mag_dB_H2 = 20*log10(abs(H2));
+
+% --- PLOT 4: FIR Filters Response ---
+fig_filters = figure('Name', 'FIR Filters Frequency Response', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
+plot(f_H1, mag_dB_H1, 'b', 'LineWidth', 1.5); hold on;
+plot(f_H2, mag_dB_H2, 'r', 'LineWidth', 1.5); grid on;
+
+% Visual limits and labels
+xlim([0, fs_target/2]); ylim([-100, 10]);
+title(sprintf('FIR Filters Frequency Response (Order: %d)', filt_order));
+xlabel('Frequency (Hz)'); ylabel('Magnitude (dB)');
+
+% Dynamic legend based on calculated cutoff frequencies
+legend(sprintf('Filter 1 (L=%d, Cutoff: %.0f Hz)', L1, (fs_target/2)*Wn_1), ...
+       sprintf('Filter 2 (L=%d, Cutoff: %.0f Hz)', L2, (fs_target/2)*Wn_2), ...
+       'Location', 'northeast');
+
+print(fig_filters, '4_FIR_Filters_Response_Fast.png', '-dpng', '-r400');
+
 % Close the text file and finalize
 fclose(fid);
 fprintf('\n>>> FAST PIPELINE COMPLETE! High-res plots and metrics saved successfully. <<<\n\n'); fflush(stdout);
