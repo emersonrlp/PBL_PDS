@@ -2,6 +2,11 @@
 % FILTER_ANALYSIS.m - Visualizing the FIR Filters Frequency Response
 % =========================================================================
 pkg load signal;
+clear; clc; % Adicione isso se não tiver
+
+% --- O PULO DO GATO ---
+addpath('utils'); % Esse script não carrega dados, mas é bom colocar para garantir
+% ----------------------
 
 fs_target = 30000;
 L1 = 2; % Upsampling factor for Signal 1
