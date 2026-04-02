@@ -26,7 +26,7 @@ L2 = fs_target / fs_2; % Upsampling factor for Signal 2 (L=3)
 filt_order = 1000;
 
 % Create and open the text file for the metrics report
-fid = fopen('metrics_report_fast.txt', 'w');
+fid = fopen('resultados/metrics_report_fast.txt', 'w');
 fprintf(fid, '--- DSP PROJECT METRICS REPORT (FAST FFT VERSION) ---\n');
 fprintf(fid, 'Target Common Frequency: %d Hz\n', fs_target);
 fprintf(fid, 'FIR Filter Order: %d\n\n', filt_order);
@@ -75,7 +75,7 @@ subplot(2,1,2); plot(f_axis_up, mag_x1_filt, 'b'); grid on;
 xlim([-fs_target/2, fs_target/2]); ylim([0, max(mag_x1_filt)*1.05]);
 set(gca, 'XTick', -15000:2500:15000);
 title('Signal 1 Upsampled WITH FIR Filter (Clean Spectrum)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig_eval1, '1A_Eval_Upsample_Sig1_Fast.png', '-dpng', '-r400');
+print(fig_eval1, 'resultados/1A_Eval_Upsample_Sig1_Fast.png', '-dpng', '-r400');
 
 % --- PLOT 1A-EXTRA: Filtered Signal ---
 fig_filt1 = figure('Name', 'Signal 1: Filtered Zoom', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
@@ -83,7 +83,7 @@ plot(f_axis_up, mag_x1_filt, 'b', 'LineWidth', 1.2); grid on;
 xlim([-5000, 5000]); ylim([0, max(mag_x1_filt)*1.05]); % Zoom brutal nos dados úteis
 set(gca, 'XTick', -5000:500:5000); % Ticks detalhados revelando os 3kHz
 title('Signal 1 Upsampled WITH FIR Filter (ISOLATED & ZOOMED)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig_filt1, '1A_Extra_Filtered_Zoom_Sig1_Fast.png', '-dpng', '-r400');
+print(fig_filt1, 'resultados/1A_Extra_Filtered_Zoom_Sig1_Fast.png', '-dpng', '-r400');
 
 % --- PLOT 1B: Original vs Reconstructed ---
 fig_rec1 = figure('Name', 'Signal 1: Original vs Recovered', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
@@ -96,7 +96,7 @@ subplot(2,1,2); plot(f_axis_orig1, mag_x1_rec, 'b'); grid on;
 xlim([-5000, 5000]); ylim([0, max(mag_x1_rec)*1.05]);
 set(gca, 'XTick', -5000:500:5000);
 title('RECOVERED Signal 1 Spectrum (15 kHz)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig_rec1, '1B_Original_vs_Recovered_Sig1_Fast.png', '-dpng', '-r400');
+print(fig_rec1, 'resultados/1B_Original_vs_Recovered_Sig1_Fast.png', '-dpng', '-r400');
 
 
 % =========================================================================
@@ -143,7 +143,7 @@ subplot(2,1,2); plot(f_axis_up, mag_x2_filt, 'b'); grid on;
 xlim([-fs_target/2, fs_target/2]); ylim([0, max(mag_x2_filt)*1.05]);
 set(gca, 'XTick', -15000:2500:15000);
 title('Signal 2 Upsampled WITH FIR Filter'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig_eval2, '2A_Eval_Upsample_Sig2_Fast.png', '-dpng', '-r400');
+print(fig_eval2, 'resultados/2A_Eval_Upsample_Sig2_Fast.png', '-dpng', '-r400');
 
 % --- PLOT 2A-EXTRA: Filtered Signal ---
 fig_filt2 = figure('Name', 'Signal 2: Filtered Zoom', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
@@ -151,7 +151,7 @@ plot(f_axis_up, mag_x2_filt, 'b', 'LineWidth', 1.2); grid on;
 xlim([-4500, 4500]); ylim([0, max(mag_x2_filt)*1.05]);
 set(gca, 'XTick', -4500:500:4500);
 title('Signal 2 Upsampled WITH FIR Filter (ISOLATED & ZOOMED)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig_filt2, '2A_Extra_Filtered_Zoom_Sig2_Fast.png', '-dpng', '-r400');
+print(fig_filt2, 'resultados/2A_Extra_Filtered_Zoom_Sig2_Fast.png', '-dpng', '-r400');
 
 % --- PLOT 2B: Original vs Reconstructed ---
 fig_rec2 = figure('Name', 'Signal 2: Original vs Recovered', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
@@ -164,7 +164,7 @@ subplot(2,1,2); plot(f_axis_orig2, mag_x2_rec, 'b'); grid on;
 xlim([-4500, 4500]); ylim([0, max(mag_x2_rec)*1.05]);
 set(gca, 'XTick', -4500:500:4500);
 title('RECOVERED Signal 2 Spectrum (10 kHz)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig_rec2, '2B_Original_vs_Recovered_Sig2_Fast.png', '-dpng', '-r400');
+print(fig_rec2, 'resultados/2B_Original_vs_Recovered_Sig2_Fast.png', '-dpng', '-r400');
 
 
 % =========================================================================
@@ -186,7 +186,7 @@ xlim([-5000, 5000]); ylim([0, max(mag_final)*1.05]);
 set(gca, 'XTick', -5000:500:5000);
 title('FINAL COMBINED SIGNAL SPECTRUM (30 kHz) - ZOOMED');
 xlabel('Frequency (Hz)'); ylabel('Magnitude');
-print(fig_final, '3_Final_Combined_Spectrum_Fast.png', '-dpng', '-r500');
+print(fig_final, 'resultados/3_Final_Combined_Spectrum_Fast.png', '-dpng', '-r500');
 
 % =========================================================================
 % SECTION 5: FIR FILTERS FREQUENCY RESPONSE ANALYSIS
@@ -222,7 +222,7 @@ legend(sprintf('Filter 1 (L=%d, Cutoff: %.0f Hz)', L1, (fs_target/2)*Wn_1), ...
        sprintf('Filter 2 (L=%d, Cutoff: %.0f Hz)', L2, (fs_target/2)*Wn_2), ...
        'Location', 'northeast');
 
-print(fig_filters, '4_FIR_Filters_Response_Fast.png', '-dpng', '-r400');
+print(fig_filters, 'resultados/4_FIR_Filters_Response_Fast.png', '-dpng', '-r400');
 
 % Close the text file and finalize
 fclose(fid);
