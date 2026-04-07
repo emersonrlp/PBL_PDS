@@ -1,0 +1,12 @@
+--- DSP PROJECT METRICS REPORT (FAST FFT VERSION) ---
+Target Common Frequency: 30000 Hz
+FIR Filter Order: 1000
+
+SIGNAL 1 EVALUATION (15 kHz -> 30 kHz -> 15 kHz):
+Mean Squared Error (MSE): 7.110340e-10
+Signal-to-Noise Ratio (SNR): 69.01 dB
+
+SIGNAL 2 EVALUATION (10 kHz -> 30 kHz -> 10 kHz):
+Mean Squared Error (MSE): 6.698011e-08
+Signal-to-Noise Ratio (SNR): 50.09 dB
+
