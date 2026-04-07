@@ -238,6 +238,44 @@ print(fig_filters, '4_FIR_Filters_Response_Fast.png', '-dpng', '-r400');
 fclose(fid);
 fprintf('\n>>> FAST PIPELINE COMPLETE! High-res plots and metrics saved successfully. <<<\n\n'); fflush(stdout);
 
+% =========================================================================
+% SECTION 6: EXTRA SESSION - DOWNSAMPLING TO 5 kHz
+% =========================================================================
+fprintf('\n[6/6] EXTRA SESSION: DOWNSAMPLING TO 5 kHz...\n'); fflush(stdout);
+
+% Define target frequency and downsampling factors
+fs_down = 5000;
+M1 = fs_1 / fs_down; % 15000 / 5000 = 3
+M2 = fs_2 / fs_down; % 10000 / 5000 = 2
+
+% Downsample channels
+fprintf('      -> Downsampling Signal 1 (M=%d) and Signal 2 (M=%d)...\n', M1, M2); fflush(stdout);
+x1_down_filt = downsample_channel(x1_15k, M1, filt_order);
+x2_down_filt = downsample_channel(x2_10k, M2, filt_order);
+
+% Compute FFTs and capture the correct frequency axis for 5 kHz
+fprintf('      -> Computing FFTs for downsampled signals...\n'); fflush(stdout);
+[mag_x1_down, f_axis_down] = compute_fast_spectrum(x1_down_filt, fs_down);
+[mag_x2_down, ~]           = compute_fast_spectrum(x2_down_filt, fs_down);
+
+% --- PLOT 5A: Downsampled Signal 1 ---
+fig_down1 = figure('Name', 'Signal 1: Downsampled to 5kHz', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_down, mag_x1_down, 'b', 'LineWidth', 1.2); grid on;
+xlim([-fs_down/2, fs_down/2]); ylim([0, max(mag_x1_down)*1.05]);
+set(gca, 'XTick', -2500:500:2500); % Ticks specific for 5kHz Nyquist limit
+title('Signal 1 DOWNSAMPLED to 5 kHz (fs = 5 kHz)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
+print(fig_down1, '5A_Downsampled_Sig1_5kHz.png', '-dpng', '-r400');
+
+% --- PLOT 5B: Downsampled Signal 2 ---
+fig_down2 = figure('Name', 'Signal 2: Downsampled to 5kHz', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_down, mag_x2_down, 'r', 'LineWidth', 1.2); grid on;
+xlim([-fs_down/2, fs_down/2]); ylim([0, max(mag_x2_down)*1.05]);
+set(gca, 'XTick', -2500:500:2500);
+title('Signal 2 DOWNSAMPLED to 5 kHz (fs = 5 kHz)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
+print(fig_down2, '5B_Downsampled_Sig2_5kHz.png', '-dpng', '-r400');
+
+fprintf('      -> Extra session complete!\n'); fflush(stdout);
+
 
 % =========================================================================
 % REPRODUÇÃO DO ÁUDIO
