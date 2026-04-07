@@ -266,13 +266,28 @@ set(gca, 'XTick', -2500:500:2500); % Ticks specific for 5kHz Nyquist limit
 title('Signal 1 DOWNSAMPLED to 5 kHz (fs = 5 kHz)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
 print(fig_down1, '5A_Downsampled_Sig1_5kHz.png', '-dpng', '-r400');
 
+fig_orig1 = figure('Name', 'Signal 1: Original', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
+subplot(2,1,1); plot(f_axis_orig1, mag_x1_orig, 'k'); grid on;
+xlim([-5000, 5000]); ylim([0, max(mag_x1_orig)*1.05]); % Cortado os vazios além de 5kHz
+set(gca, 'XTick', -5000:500:5000);
+title('ORIGINAL Signal 1 Spectrum (15 kHz)'); ylabel('Magnitude');
+print(fig_orig1, '1_Original.png', '-dpng', '-r400');
+
+
 % --- PLOT 5B: Downsampled Signal 2 ---
 fig_down2 = figure('Name', 'Signal 2: Downsampled to 5kHz', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
 plot(f_axis_down, mag_x2_down, 'r', 'LineWidth', 1.2); grid on;
-xlim([-fs_down/2, fs_down/2]); ylim([0, max(mag_x2_down)*1.05]);
+xlim([-fs_down, fs_down]); ylim([0, max(mag_x2_down)*1.05]);
 set(gca, 'XTick', -2500:500:2500);
 title('Signal 2 DOWNSAMPLED to 5 kHz (fs = 5 kHz)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
 print(fig_down2, '5B_Downsampled_Sig2_5kHz.png', '-dpng', '-r400');
+
+fig_orig2 = figure('Name', 'Signal 2: Original vs Recovered', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
+subplot(2,1,1); plot(f_axis_orig2, mag_x2_orig, 'k'); grid on;
+xlim([-4500, 4500]); ylim([0, max(mag_x2_orig)*1.05]);
+set(gca, 'XTick', -4500:500:4500);
+title('ORIGINAL Signal 2 Spectrum (10 kHz)'); ylabel('Magnitude');
+print(fig_orig2, '2_Original.png', '-dpng', '-r400');
 
 fprintf('      -> Extra session complete!\n'); fflush(stdout);
 
@@ -284,6 +299,6 @@ fprintf('\n====================================================\n');
 fprintf(' Pressione ENTER na Command Window para ouvir o áudio!\n');
 fprintf('====================================================\n');
 
-pause; % Este é o comando mágico que congela o script até o ENTER ser pressionado
+%pause; % Este é o comando mágico que congela o script até o ENTER ser pressionado
 
-soundsc(final_audio, fs_target); % Toca o áudio com volume normalizado
+%soundsc(final_audio, fs_target); % Toca o áudio com volume normalizado
