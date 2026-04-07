@@ -171,6 +171,21 @@ fprintf('\n[4/4] COMBINING SIGNALS AT 30 kHz...\n'); fflush(stdout);
 min_len = min(length(x1_up_filt), length(x2_up_filt));
 final_audio = x1_up_filt(1:min_len) + x2_up_filt(1:min_len);
 
+
+
+
+% --- NOVO: FILTRO PASSA-BAIXAS DE 3 kHz ---
+fprintf('      -> Aplicando filtro Passa-Baixas em 3 kHz...\n'); fflush(stdout);
+fc_corte = 3000; % Frequência de corte desejada
+Wn_corte = fc_corte / (fs_target / 2); % Frequência normalizada (Nyquist)
+h_corte = fir1(filt_order, Wn_corte); % Cria o filtro com a ordem 1000
+final_audio = filtfilt(h_corte, 1, final_audio); % Filtra o sinal sem atrasar a fase
+% ------------------------------------------
+
+
+
+
+
 fprintf('      -> Computing Final Combined FFT...\n'); fflush(stdout);
 [mag_final, ~] = compute_fast_spectrum(final_audio, fs_target);
 
@@ -222,3 +237,15 @@ print(fig_filters, '4_FIR_Filters_Response_Fast.png', '-dpng', '-r400');
 % Close the text file and finalize
 fclose(fid);
 fprintf('\n>>> FAST PIPELINE COMPLETE! High-res plots and metrics saved successfully. <<<\n\n'); fflush(stdout);
+
+
+% =========================================================================
+% REPRODUÇÃO DO ÁUDIO
+% =========================================================================
+fprintf('\n====================================================\n');
+fprintf(' Pressione ENTER na Command Window para ouvir o áudio!\n');
+fprintf('====================================================\n');
+
+pause; % Este é o comando mágico que congela o script até o ENTER ser pressionado
+
+soundsc(final_audio, fs_target); % Toca o áudio com volume normalizado
