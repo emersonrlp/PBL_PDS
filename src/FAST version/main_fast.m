@@ -261,7 +261,7 @@ fprintf('      -> Computing FFTs for downsampled signals...\n'); fflush(stdout);
 % --- PLOT 5A: Downsampled Signal 1 ---
 fig_down1 = figure('Name', 'Signal 1: Downsampled to 5kHz', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
 plot(f_axis_down, mag_x1_down, 'b', 'LineWidth', 1.2); grid on;
-xlim([-fs_down/2, fs_down/2]); ylim([0, max(mag_x1_down)*1.05]);
+xlim([-fs_down, fs_down]); ylim([0, max(mag_x1_down)*1.05]);
 set(gca, 'XTick', -2500:500:2500); % Ticks specific for 5kHz Nyquist limit
 title('Signal 1 DOWNSAMPLED to 5 kHz (fs = 5 kHz)'); xlabel('Frequency (Hz)'); ylabel('Magnitude');
 print(fig_down1, '5A_Downsampled_Sig1_5kHz.png', '-dpng', '-r400');
