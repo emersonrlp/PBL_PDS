@@ -64,6 +64,12 @@ fprintf('      -> Computing DTFTs for Plotting...\n'); fflush(stdout);
 [mag_x1_rec, ~]       = compute_dtft(x1_recovered, res);
 f_axis_up = (w_up / (2*pi)) * fs_target;
 
+% 2.5 - Fixing Signal's Energy for Plotting
+mag_x1_nofilt = 2 * mag_x1_nofilt;
+mag_x1_filt   = 2 * mag_x1_filt;
+mag_x1_rec    = 2 * mag_x1_rec;
+mag_x1_orig   = 2 * mag_x1_orig;
+
 % --- PLOT 1A: Upsampling Filter Evaluation ---
 fig_eval1 = figure('Name', 'Signal 1: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
 subplot(2,1,1); plot(f_axis_up, mag_x1_nofilt, 'r'); grid on;
@@ -133,6 +139,12 @@ fprintf('      -> Computing DTFTs for Plotting...\n'); fflush(stdout);
 [mag_x2_filt, ~]   = compute_dtft(x2_up_filt, res);
 [mag_x2_rec, ~]    = compute_dtft(x2_recovered, res);
 
+% 3.5 - Fixing Signal's Energy for Plotting
+mag_x2_nofilt = 2 * mag_x2_nofilt;
+mag_x2_filt   = 2 * mag_x2_filt;
+mag_x2_rec    = 2 * mag_x2_rec;
+mag_x2_orig   = 2 * mag_x2_orig;
+
 % --- PLOT 2A: Upsampling Filter Evaluation ---
 fig_eval2 = figure('Name', 'Signal 2: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
 subplot(2,1,1); plot(f_axis_up, mag_x2_nofilt, 'r'); grid on;
@@ -179,6 +191,9 @@ final_audio = x1_up_filt(1:min_len) + x2_up_filt(1:min_len);
 
 fprintf('      -> Computing Final Combined DTFT...\n'); fflush(stdout);
 [mag_final, ~] = compute_dtft(final_audio, res);
+
+% Fixing Signal's Energy for Plotting
+mag_final = 2 * mag_final;
 
 % --- PLOT 3: Final Combined Spectrum ---
 fig_final = figure('Name', 'Final Combined Audio', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
