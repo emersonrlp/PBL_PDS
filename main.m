@@ -64,11 +64,11 @@ fprintf('      -> Computing DTFTs for Plotting...\n'); fflush(stdout);
 [mag_x1_rec, ~]       = compute_dtft(x1_recovered, res);
 f_axis_up = (w_up / (2*pi)) * fs_target;
 
-% 2.5 - Fixing Signal's Energy for Plotting
-mag_x1_nofilt = 2 * mag_x1_nofilt;
-mag_x1_filt   = 2 * mag_x1_filt;
-mag_x1_rec    = 2 * mag_x1_rec;
-mag_x1_orig   = 2 * mag_x1_orig;
+% 2.5 - Fixing Signal's Energy for Plotting AND Normalizing Y-Axis
+mag_x1_nofilt = 2 * mag_x1_nofilt;  mag_x1_nofilt = mag_x1_nofilt / max(mag_x1_nofilt);
+mag_x1_filt   = 2 * mag_x1_filt;    mag_x1_filt   = mag_x1_filt / max(mag_x1_filt);
+mag_x1_rec    = 2 * mag_x1_rec;     mag_x1_rec    = mag_x1_rec / max(mag_x1_rec);
+mag_x1_orig   = 2 * mag_x1_orig;    mag_x1_orig   = mag_x1_orig / max(mag_x1_orig);
 
 % --- PLOT 1A: Upsampling Filter Evaluation ---
 fig_eval1 = figure('Name', 'Signal 1: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
@@ -139,11 +139,11 @@ fprintf('      -> Computing DTFTs for Plotting...\n'); fflush(stdout);
 [mag_x2_filt, ~]   = compute_dtft(x2_up_filt, res);
 [mag_x2_rec, ~]    = compute_dtft(x2_recovered, res);
 
-% 3.5 - Fixing Signal's Energy for Plotting
-mag_x2_nofilt = 2 * mag_x2_nofilt;
-mag_x2_filt   = 2 * mag_x2_filt;
-mag_x2_rec    = 2 * mag_x2_rec;
-mag_x2_orig   = 2 * mag_x2_orig;
+% 3.5 - Fixing Signal's Energy for Plotting AND Normalizing Y-Axis
+mag_x2_nofilt = 2 * mag_x2_nofilt;  mag_x2_nofilt = mag_x2_nofilt / max(mag_x2_nofilt);
+mag_x2_filt   = 2 * mag_x2_filt;    mag_x2_filt   = mag_x2_filt / max(mag_x2_filt);
+mag_x2_rec    = 2 * mag_x2_rec;     mag_x2_rec    = mag_x2_rec / max(mag_x2_rec);
+mag_x2_orig   = 2 * mag_x2_orig;    mag_x2_orig   = mag_x2_orig / max(mag_x2_orig);
 
 % --- PLOT 2A: Upsampling Filter Evaluation ---
 fig_eval2 = figure('Name', 'Signal 2: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
@@ -192,8 +192,9 @@ final_audio = x1_up_filt(1:min_len) + x2_up_filt(1:min_len);
 fprintf('      -> Computing Final Combined DTFT...\n'); fflush(stdout);
 [mag_final, ~] = compute_dtft(final_audio, res);
 
-% Fixing Signal's Energy for Plotting
+% Fixing Signal's Energy for Plotting AND Normalizing Y-Axis
 mag_final = 2 * mag_final;
+mag_final = mag_final / max(mag_final);
 
 % --- PLOT 3: Final Combined Spectrum ---
 fig_final = figure('Name', 'Final Combined Audio', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
@@ -219,9 +220,9 @@ h_filt2 = fir1(filt_order, Wn_2);
 [H1, f_H1] = freqz(h_filt1, 1, 2048, fs_target);
 [H2, f_H2] = freqz(h_filt2, 1, 2048, fs_target);
 
-% Convert to Decibels (dB)
-mag_dB_H1 = 20*log10(abs(H1));
-mag_dB_H2 = 20*log10(abs(H2));
+% Convert to Decibels (dB) and Normalize to 0 dB max
+mag_dB_H1 = 20*log10(abs(H1));  mag_dB_H1 = mag_dB_H1 - max(mag_dB_H1);
+mag_dB_H2 = 20*log10(abs(H2));  mag_dB_H2 = mag_dB_H2 - max(mag_dB_H2);
 
 % --- PLOT 4: FIR Filters Response ---
 fig_filters = figure('Name', 'FIR Filters Frequency Response', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
