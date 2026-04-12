@@ -77,7 +77,7 @@ xlim([0, fs_1/2]); ylim([0, 1.05]); % Nyquist = 7500 Hz
 set(gca, 'XTick', 0:750:fs_1/2);
 title('ORIGINAL Signal 1 Spectrum (fs = 15 kHz)');
 xlabel('Frequency (Hz)'); ylabel('Normalized Magnitude');
-print(fig_orig1, '0A_Original_Spectrum_Sig1_Fast.png', '-dpng', '-r400');
+print(fig_orig1, 'results/0A_Original_Spectrum_Sig1_Fast.png', '-dpng', '-r400');
 
 % --- PLOT 1A: Upsampling Filter Evaluation ---
 fig_eval1 = figure('Name', 'Signal 1: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
@@ -160,7 +160,7 @@ xlim([0, fs_2/2]); ylim([0, 1.05]); % Nyquist = 5000 Hz
 set(gca, 'XTick', 0:500:fs_2/2);
 title('ORIGINAL Signal 2 Spectrum (fs = 10 kHz)');
 xlabel('Frequency (Hz)'); ylabel('Normalized Magnitude');
-print(fig_orig2, '0B_Original_Spectrum_Sig2_Fast.png', '-dpng', '-r400');
+print(fig_orig2, 'results/0B_Original_Spectrum_Sig2_Fast.png', '-dpng', '-r400');
 
 % --- PLOT 2A: Upsampling Filter Evaluation ---
 fig_eval2 = figure('Name', 'Signal 2: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
@@ -198,11 +198,6 @@ print(fig_rec2, 'results/2B_Original_vs_Recovered_Sig2_Fast.png', '-dpng', '-r40
 
 
 % =========================================================================
-% SECTION 4: FINAL COMBINATION AT 30 kHz
-% =========================================================================
-fprintf('\n[4/4] COMBINING SIGNALS AT 30 kHz...\n'); fflush(stdout);
-
-% =========================================================================
 % SECTION 4: FINAL COMBINATION AND NOISE REMOVAL
 % =========================================================================
 fprintf('\n[4/4] COMBINING SIGNALS AND REMOVING NOISE...\n'); fflush(stdout);
@@ -237,7 +232,7 @@ subplot(2,1,2); plot(f_axis_up, mag_clean, 'b', 'LineWidth', 1.2); grid on;
 xlim([0, fs_target/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:1500:15000);
 title('COMBINED SPECTRUM AFTER 3 kHz FILTER (Noise Destroyed)');
 xlabel('Frequency (Hz)'); ylabel('Normalized Magnitude');
-print(fig_noise, '3_Noise_Removal_Proof_Fast.png', '-dpng', '-r400');
+print(fig_noise, 'results/3_Noise_Removal_Proof_Fast.png', '-dpng', '-r400');
 
 % =========================================================================
 % EXTRA: TIME DOMAIN PLOTS (For Report Figures)
@@ -258,13 +253,13 @@ subplot(2,1,1); plot(t_ms_1, x1_15k(1:num_samples), 'b', 'LineWidth', 1.2); grid
 title('ORIGINAL Signal 1 (Time Domain - First 500 samples)'); xlabel('Time (ms)'); ylabel('Amplitude');
 subplot(2,1,2); plot(t_ms_2, x2_10k(1:num_samples), 'r', 'LineWidth', 1.2); grid on;
 title('ORIGINAL Signal 2 (Time Domain - First 500 samples)'); xlabel('Time (ms)'); ylabel('Amplitude');
-print(fig_time_orig, 'TimeDomain_Original_Signals_Fast.png', '-dpng', '-r400');
+print(fig_time_orig, 'results/TimeDomain_Original_Signals_Fast.png', '-dpng', '-r400');
 
 % --- PLOT: Final Combined Audio in Time Domain (Figura 10 do Relatorio) ---
 fig_time_final = figure('Name', 'Final Combined Audio (Time Domain)', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
 plot(t_ms_target, final_audio(1:num_samples), 'k', 'LineWidth', 1.2); grid on;
 title('FINAL COMBINED AUDIO (Time Domain - First 500 samples)'); xlabel('Time (ms)'); ylabel('Amplitude');
-print(fig_time_final, 'TimeDomain_Final_Combined_Fast.png', '-dpng', '-r400');
+print(fig_time_final, 'results/TimeDomain_Final_Combined_Fast.png', '-dpng', '-r400');
 
 % =========================================================================
 % SECTION 5: FIR FILTERS FREQUENCY RESPONSE ANALYSIS
