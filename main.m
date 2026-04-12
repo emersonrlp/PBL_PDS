@@ -203,25 +203,69 @@ print(fig_rec2, 'results/2B_Original_vs_Recovered_Sig2.png', '-dpng', '-r400');
 % =========================================================================
 fprintf('\n[4/4] COMBINING SIGNALS AT 30 kHz...\n'); fflush(stdout);
 
+% =========================================================================
+% SECTION 4: FINAL COMBINATION AND NOISE REMOVAL
+% =========================================================================
+fprintf('\n[4/4] COMBINING SIGNALS AND REMOVING NOISE...\n'); fflush(stdout);
+
 % Align vectors to the same size before summing
 min_len = min(length(x1_up_filt), length(x2_up_filt));
-final_audio = x1_up_filt(1:min_len) + x2_up_filt(1:min_len);
+final_audio_noisy = x1_up_filt(1:min_len) + x2_up_filt(1:min_len);
 
-fprintf('      -> Computing Final Combined DTFT...\n'); fflush(stdout);
-[mag_final, ~] = compute_dtft(final_audio, res);
+fprintf('      -> Computing Spectrum BEFORE noise removal...\n'); fflush(stdout);
+[mag_noisy, ~] = compute_dtft(final_audio_noisy, res);
+mag_noisy = mag_noisy / max(mag_noisy); % Normalization
 
-% Fixing Signal's Energy for Plotting AND Normalizing Y-Axis
-mag_final = 2 * mag_final;
-mag_final = mag_final / max(mag_final);
+% --- 3 kHz LOW-PASS FILTER (NOISE REMOVAL) ---
+fprintf('      -> Applying 3 kHz Low-Pass Filter...\n'); fflush(stdout);
+fc_corte = 3000;
+Wn_corte = fc_corte / (fs_target / 2);
+h_corte = fir1(filt_order, Wn_corte);
+final_audio = filtfilt(h_corte, 1, final_audio_noisy); % Cleaned Audio
 
-% --- PLOT 3: Final Combined Spectrum ---
-fig_final = figure('Name', 'Final Combined Audio', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
-plot(f_axis_up, mag_final, 'k', 'LineWidth', 1.2); grid on;
-xlim([0, 5000]); ylim([0, max(mag_final)*1.05]);
-set(gca, 'XTick', 0:250:5000);
-title('FINAL COMBINED SIGNAL SPECTRUM (30 kHz) - ZOOMED');
-xlabel('Frequency (Hz)'); ylabel('Magnitude (a.u.)');
-print(fig_final, 'results/3_Final_Combined_Spectrum.png', '-dpng', '-r500');
+fprintf('      -> Computing Spectrum AFTER noise removal...\n'); fflush(stdout);
+[mag_clean, ~] = compute_dtft(final_audio, res);
+mag_clean = mag_clean / max(mag_clean); % Normalization
+
+% --- PLOT 3: Noise Removal Proof (Wide Spectrum) ---
+fig_noise = figure('Name', 'Noise Removal Proof', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
+subplot(2,1,1); plot(f_axis_up, mag_noisy, 'r', 'LineWidth', 1.2); grid on;
+xlim([0, fs_target/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:1500:15000);
+title('COMBINED SPECTRUM BEFORE 3 kHz FILTER (Notice the High-Frequency Noise)');
+xlabel('Frequency (Hz)'); ylabel('Normalized Magnitude');
+
+subplot(2,1,2); plot(f_axis_up, mag_clean, 'b', 'LineWidth', 1.2); grid on;
+xlim([0, fs_target/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:1500:15000);
+title('COMBINED SPECTRUM AFTER 3 kHz FILTER (Noise Destroyed)');
+xlabel('Frequency (Hz)'); ylabel('Normalized Magnitude');
+print(fig_noise, '3_Noise_Removal_Proof.png', '-dpng', '-r400');
+
+% =========================================================================
+% EXTRA: TIME DOMAIN PLOTS (For Report Figures)
+% =========================================================================
+fprintf('      -> Generating Time Domain Plots for Report...\n'); fflush(stdout);
+
+% Plot only a short window (e.g., 500 samples) to visualize the actual waveform
+num_samples = 500;
+
+% Create time vectors in milliseconds (ms) for the physical X-axis
+t_ms_1 = (0:num_samples-1) * (1000 / fs_1);
+t_ms_2 = (0:num_samples-1) * (1000 / fs_2);
+t_ms_target = (0:num_samples-1) * (1000 / fs_target);
+
+% --- PLOT: Original Signals in Time Domain (Baseline) ---
+fig_time_orig = figure('Name', 'Original Signals (Time Domain)', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
+subplot(2,1,1); plot(t_ms_1, x1_15k(1:num_samples), 'b', 'LineWidth', 1.2); grid on;
+title('ORIGINAL Signal 1 (Time Domain - First 500 samples)'); xlabel('Time (ms)'); ylabel('Amplitude');
+subplot(2,1,2); plot(t_ms_2, x2_10k(1:num_samples), 'r', 'LineWidth', 1.2); grid on;
+title('ORIGINAL Signal 2 (Time Domain - First 500 samples)'); xlabel('Time (ms)'); ylabel('Amplitude');
+print(fig_time_orig, 'TimeDomain_Original_Signals.png', '-dpng', '-r400');
+
+% --- PLOT: Final Combined Audio in Time Domain ---
+fig_time_final = figure('Name', 'Final Combined Audio (Time Domain)', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(t_ms_target, final_audio(1:num_samples), 'k', 'LineWidth', 1.2); grid on;
+title('FINAL COMBINED AUDIO (Time Domain - First 500 samples)'); xlabel('Time (ms)'); ylabel('Amplitude');
+print(fig_time_final, 'TimeDomain_Final_Combined.png', '-dpng', '-r400');
 
 % =========================================================================
 % SECTION 5: FIR FILTERS FREQUENCY RESPONSE ANALYSIS
