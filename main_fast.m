@@ -70,6 +70,15 @@ mag_x1_filt   = 2 * mag_x1_filt;
 mag_x1_rec    = 2 * mag_x1_rec;
 mag_x1_orig   = 2 * mag_x1_orig;
 
+% --- PLOT 0A: Original Signal 1 Spectrum ---
+fig_orig1 = figure('Name', 'Original Signal 1 Spectrum', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_orig1, mag_x1_orig, 'k', 'LineWidth', 1.2); grid on;
+xlim([0, fs_1/2]); ylim([0, 1.05]); % Nyquist = 7500 Hz
+set(gca, 'XTick', 0:750:fs_1/2);
+title('ORIGINAL Signal 1 Spectrum (fs = 15 kHz)');
+xlabel('Frequency (Hz)'); ylabel('Normalized Magnitude');
+print(fig_orig1, '0A_Original_Spectrum_Sig1_Fast.png', '-dpng', '-r400');
+
 % --- PLOT 1A: Upsampling Filter Evaluation ---
 fig_eval1 = figure('Name', 'Signal 1: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
 subplot(2,1,1); plot(f_axis_up, mag_x1_nofilt, 'r'); grid on;
@@ -143,6 +152,15 @@ mag_x2_nofilt = 2 * mag_x2_nofilt;
 mag_x2_filt   = 2 * mag_x2_filt;
 mag_x2_rec    = 2 * mag_x2_rec;
 mag_x2_orig   = 2 * mag_x2_orig;
+
+% --- PLOT 0B: Original Signal 2 Spectrum ---
+fig_orig2 = figure('Name', 'Original Signal 2 Spectrum', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_orig2, mag_x2_orig, 'k', 'LineWidth', 1.2); grid on;
+xlim([0, fs_2/2]); ylim([0, 1.05]); % Nyquist = 5000 Hz
+set(gca, 'XTick', 0:500:fs_2/2);
+title('ORIGINAL Signal 2 Spectrum (fs = 10 kHz)');
+xlabel('Frequency (Hz)'); ylabel('Normalized Magnitude');
+print(fig_orig2, '0B_Original_Spectrum_Sig2_Fast.png', '-dpng', '-r400');
 
 % --- PLOT 2A: Upsampling Filter Evaluation ---
 fig_eval2 = figure('Name', 'Signal 2: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
