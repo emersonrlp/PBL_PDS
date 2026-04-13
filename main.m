@@ -12,7 +12,7 @@ addpath('utils');
 % =========================================================================
 % SECTION 1: SETUP AND INITIALIZATION
 % =========================================================================
-fprintf('\n[1/4] STARTING DSP PIPELINE & LOADING DATA...\n'); fflush(stdout);
+fprintf('\n[1/5] STARTING DSP PIPELINE & LOADING DATA...\n'); fflush(stdout);
 load('x1_e_x2.mat');
 
 fs_1 = 15000;
@@ -22,282 +22,266 @@ fs_target = 30000;
 L1 = fs_target / fs_1; % Upsampling factor for Signal 1 (L=2)
 L2 = fs_target / fs_2; % Upsampling factor for Signal 2 (L=3)
 filt_order = 150;
-res = 1000;
+res = 1000; % DTFT resolution
 
 % Create and open the text file for the metrics report
+if ~exist('results', 'dir')
+    mkdir('results');
+end
 fid = fopen('results/metrics_report.txt', 'w');
 fprintf(fid, '--- DSP PROJECT METRICS REPORT ---\n');
 fprintf(fid, 'Target Common Frequency: %d Hz\n\n', fs_target);
 
 % =========================================================================
-% SECTION 2: SIGNAL 1 (15 kHz) - PROCESSING AND EVALUATION
+% SECTION 2: SIGNAL 1 (15 kHz) - PRE-FILTERING, UPSAMPLING & EVALUATION
 % =========================================================================
-fprintf('[2/4] PROCESSING SIGNAL 1 (15 kHz)...\n'); fflush(stdout);
+fprintf('[2/5] PROCESSING SIGNAL 1 (15 kHz)...\n'); fflush(stdout);
 
-% 2.1 - Original Signal DTFT
-fprintf('      -> Computing Original DTFT...\n'); fflush(stdout);
-[mag_x1_orig, w_orig1] = compute_dtft(x1_15k, res);
+% 2.1 - Original Raw Spectrum
+fprintf('      -> Computing Original Raw DTFT...\n'); fflush(stdout);
+[mag_x1_raw, w_orig1] = compute_dtft(x1_15k, res);
 f_axis_orig1 = (w_orig1 / (2*pi)) * fs_1;
+mag_x1_raw = mag_x1_raw / max(mag_x1_raw);
 
-% 2.2 - Upsampling (With and Without Filter)
+% 2.2 - Pre-filtering (3 kHz Noise Removal)
+fprintf('      -> Applying Pre-Processing Noise Filter (3 kHz)...\n'); fflush(stdout);
+fc_noise = 3000;
+Wn_noise1 = fc_noise / (fs_1 / 2);
+h_noise1 = fir1(filt_order, Wn_noise1);
+x1_clean = filtfilt(h_noise1, 1, x1_15k);
+
+[mag_x1_clean, ~] = compute_dtft(x1_clean, res);
+mag_x1_clean = mag_x1_clean / max(mag_x1_clean);
+
+% 2.3 - Upsampling (With and Without Filter) using CLEANED signal
 fprintf('      -> Upsampling (L=%d) and filtering...\n', L1); fflush(stdout);
-x1_up_filt = upsample_channel(x1_15k, L1, filt_order);
+x1_up_filt = upsample_channel(x1_clean, L1, filt_order);
 
-fprintf('      -> Upsampling WITHOUT filtering (for visualization)...\n'); fflush(stdout);
-x1_up_nofilt = zeros(1, length(x1_15k) * L1);
-x1_up_nofilt(1:L1:end) = x1_15k(:)' * L1; % Forced row vector
+fprintf('      -> Upsampling WITHOUT filtering...\n'); fflush(stdout);
+x1_up_nofilt = zeros(1, length(x1_clean) * L1);
+x1_up_nofilt(1:L1:end) = x1_clean(:)' * L1;
 
-% 2.3 - Roundtrip Evaluation (Recovering the signal)
-fprintf('      -> Downsampling to recover signal and calculate metrics...\n'); fflush(stdout);
+% 2.4 - Roundtrip Evaluation (Compared against CLEAN signal)
+fprintf('      -> Downsampling to calculate metrics...\n'); fflush(stdout);
 x1_recovered = downsample_channel(x1_up_filt, L1, filt_order);
-mse_x1 = calculate_mse(x1_15k, x1_recovered);
-snr_x1 = calculate_snr(x1_15k, x1_recovered);
+mse_x1 = calculate_mse(x1_clean, x1_recovered);
+snr_x1 = calculate_snr(x1_clean, x1_recovered);
 
 fprintf(fid, 'SIGNAL 1 EVALUATION (15 kHz -> 30 kHz -> 15 kHz):\n');
 fprintf(fid, 'Mean Squared Error (MSE): %e\n', mse_x1);
 fprintf(fid, 'Signal-to-Noise Ratio (SNR): %.2f dB\n\n', snr_x1);
 
-% 2.4 - DTFTs for Plots
+% 2.5 - DTFTs for Plots
 fprintf('      -> Computing DTFTs for Plotting...\n'); fflush(stdout);
-[mag_x1_nofilt, w_up] = compute_dtft(x1_up_nofilt, res);
-[mag_x1_filt, ~]      = compute_dtft(x1_up_filt, res);
-[mag_x1_rec, ~]       = compute_dtft(x1_recovered, res);
+[mag_x1_up_nofilt, w_up] = compute_dtft(x1_up_nofilt, res);
 f_axis_up = (w_up / (2*pi)) * fs_target;
 
-% 2.5 - Fixing Signal's Energy for Plotting AND Normalizing Y-Axis
-mag_x1_nofilt = 2 * mag_x1_nofilt;  mag_x1_nofilt = mag_x1_nofilt / max(mag_x1_nofilt);
-mag_x1_filt   = 2 * mag_x1_filt;    mag_x1_filt   = mag_x1_filt / max(mag_x1_filt);
-mag_x1_rec    = 2 * mag_x1_rec;     mag_x1_rec    = mag_x1_rec / max(mag_x1_rec);
-mag_x1_orig   = 2 * mag_x1_orig;    mag_x1_orig   = mag_x1_orig / max(mag_x1_orig);
+[mag_x1_up_filt, ~] = compute_dtft(x1_up_filt, res);
+[mag_x1_rec, ~]     = compute_dtft(x1_recovered, res);
 
-% --- PLOT 0A: Original Signal 1 Spectrum (Isolado) ---
-fig_orig1 = figure('Name', 'Original Signal 1 Spectrum', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
-plot(f_axis_orig1, mag_x1_orig, 'k', 'LineWidth', 1.2); grid on;
-xlim([0, fs_1/2]); ylim([0, 1.05]); % Nyquist = 7500 Hz
-set(gca, 'XTick', 0:750:fs_1/2);
-title('ORIGINAL Signal 1 Spectrum (fs = 15 kHz)');
-xlabel('Frequency (Hz)'); ylabel('Normalized Magnitude');
-print(fig_orig1, 'results/0A_Original_Spectrum_Sig1.png', '-dpng', '-r400');
+mag_x1_up_nofilt = mag_x1_up_nofilt / max(mag_x1_up_nofilt);
+mag_x1_up_filt   = mag_x1_up_filt / max(mag_x1_up_filt);
+mag_x1_rec       = mag_x1_rec / max(mag_x1_rec);
 
-% --- PLOT 1A: Upsampling Filter Evaluation ---
-fig_eval1 = figure('Name', 'Signal 1: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
-subplot(2,1,1); plot(f_axis_up, mag_x1_nofilt, 'r'); grid on;
-xlim([0, fs_target/2]); ylim([0, max(mag_x1_nofilt)*1.05]);
-set(gca, 'XTick', 0:1500:15000);
-title('Signal 1 Upsampled WITHOUT Filter (Notice the False Images)'); ylabel('Magnitude (a.u.)');
+% --- PLOTS SIGNAL 1 ---
+fig1 = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_orig1, mag_x1_raw, 'k', 'LineWidth', 1.2); grid on;
+xlim([0, fs_1/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:750:fs_1/2);
+title('Espectro do sinal x1[n] original');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+print(fig1, 'results/Original_Raw_Sig1.png', '-dpng', '-r400');
 
-subplot(2,1,2); plot(f_axis_up, mag_x1_filt, 'b'); grid on;
-xlim([0, fs_target/2]); ylim([0, max(mag_x1_filt)*1.05]);
-set(gca, 'XTick', 0:1500:15000);
-title('Signal 1 Upsampled WITH FIR Filter (Clean Spectrum)'); xlabel('Frequency (Hz)'); ylabel('Magnitude (a.u.)');
-print(fig_eval1, 'results/1A_Eval_Upsample_Sig1.png', '-dpng', '-r400');
+fig3 = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_orig1, mag_x1_clean, 'b', 'LineWidth', 1.2); grid on;
+xlim([0, fs_1/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:750:fs_1/2);
+title('Sinal x1[n] após a aplicação do filtro FIR passa-baixa (3 kHz)');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+print(fig3, 'results/PreFiltered_Clean_Sig1.png', '-dpng', '-r400');
 
-% --- PLOT 1A-EXTRA: Filtered Signal ---
-fig_filt1 = figure('Name', 'Signal 1: Filtered Zoom', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
-plot(f_axis_up, mag_x1_filt, 'b', 'LineWidth', 1.2); grid on;
-xlim([0, 5000]); ylim([0, max(mag_x1_filt)*1.05]);
-set(gca, 'XTick', 0:250:5000);
-title('Signal 1 Upsampled WITH FIR Filter (ISOLATED & ZOOMED)'); xlabel('Frequency (Hz)'); ylabel('Magnitude (a.u.)');
-print(fig_filt1, 'results/1A_Extra_Filtered_Zoom_Sig1.png', '-dpng', '-r400');
+fig6 = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_up, mag_x1_up_nofilt, 'r', 'LineWidth', 1.2); grid on;
+xlim([0, fs_target/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:1500:15000);
+title('Espectro do sinal x1[n] após superamostragem (L=2) sem filtragem');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+print(fig6, 'results/Upsample_NoFilt_Sig1.png', '-dpng', '-r400');
 
-% --- PLOT 1B: Original vs Reconstructed ---
-fig_rec1 = figure('Name', 'Signal 1: Original vs Recovered', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
-subplot(2,1,1); plot(f_axis_orig1, mag_x1_orig, 'k'); grid on;
-xlim([0, 5000]); ylim([0, max(mag_x1_orig)*1.05]);
-set(gca, 'XTick', 0:250:5000);
-title('ORIGINAL Signal 1 Spectrum (15 kHz)'); ylabel('Magnitude (a.u.)');
+fig7 = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_up, mag_x1_up_filt, 'b', 'LineWidth', 1.2); grid on;
+xlim([0, fs_target/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:1500:15000);
+title('Espectro do sinal x1[n] após a aplicação do filtro interpolador (L=2)');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+print(fig7, 'results/Upsample_Filt_Sig1.png', '-dpng', '-r400');
 
-subplot(2,1,2); plot(f_axis_orig1, mag_x1_rec, 'b'); grid on;
-xlim([0, 5000]); ylim([0, max(mag_x1_rec)*1.05]);
-set(gca, 'XTick', 0:250:5000);
-title('RECOVERED Signal 1 Spectrum (15 kHz)'); xlabel('Frequency (Hz)'); ylabel('Magnitude (a.u.)');
-print(fig_rec1, 'results/1B_Original_vs_Recovered_Sig1.png', '-dpng', '-r400');
+fig_rec1 = figure('Visible', 'off', 'Position', [0, 0, 1600, 900]);
+subplot(2,1,1); plot(f_axis_orig1, mag_x1_clean, 'k', 'LineWidth', 1.2); grid on;
+xlim([0, fs_1/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:750:fs_1/2);
+title('Sinal x1[n] Limpo (Referência pré-reamostragem)');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+subplot(2,1,2); plot(f_axis_orig1, mag_x1_rec, 'b', 'LineWidth', 1.2); grid on;
+xlim([0, fs_1/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:750:fs_1/2);
+title('Sinal x1[n] Recuperado (Após super e subamostragem)');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+print(fig_rec1, 'results/Comparacao_Roundtrip_Sig1.png', '-dpng', '-r400');
 
 
 % =========================================================================
-% SECTION 3: SIGNAL 2 (10 kHz) - PROCESSING AND EVALUATION
+% SECTION 3: SIGNAL 2 (10 kHz) - PRE-FILTERING, UPSAMPLING & EVALUATION
 % =========================================================================
-fprintf('\n[3/4] PROCESSING SIGNAL 2 (10 kHz)...\n'); fflush(stdout);
+fprintf('\n[3/5] PROCESSING SIGNAL 2 (10 kHz)...\n'); fflush(stdout);
 
-% 3.1 - Original Signal DTFT
-fprintf('      -> Computing Original DTFT...\n'); fflush(stdout);
-[mag_x2_orig, w_orig2] = compute_dtft(x2_10k, res);
+% 3.1 - Original Raw Spectrum
+fprintf('      -> Computing Original Raw DTFT...\n'); fflush(stdout);
+[mag_x2_raw, w_orig2] = compute_dtft(x2_10k, res);
 f_axis_orig2 = (w_orig2 / (2*pi)) * fs_2;
+mag_x2_raw = mag_x2_raw / max(mag_x2_raw);
 
-% 3.2 - Upsampling (With and Without Filter)
+% 3.2 - Pre-filtering (3 kHz Noise Removal)
+fprintf('      -> Applying Pre-Processing Noise Filter (3 kHz)...\n'); fflush(stdout);
+Wn_noise2 = fc_noise / (fs_2 / 2);
+h_noise2 = fir1(filt_order, Wn_noise2);
+x2_clean = filtfilt(h_noise2, 1, x2_10k);
+
+[mag_x2_clean, ~] = compute_dtft(x2_clean, res);
+mag_x2_clean = mag_x2_clean / max(mag_x2_clean);
+
+% 3.3 - Upsampling (With and Without Filter) using CLEANED signal
 fprintf('      -> Upsampling (L=%d) and filtering...\n', L2); fflush(stdout);
-x2_up_filt = upsample_channel(x2_10k, L2, filt_order);
+x2_up_filt = upsample_channel(x2_clean, L2, filt_order);
 
-fprintf('      -> Upsampling WITHOUT filtering (for visualization)...\n'); fflush(stdout);
-x2_up_nofilt = zeros(1, length(x2_10k) * L2);
-x2_up_nofilt(1:L2:end) = x2_10k(:)' * L2; % Forced row vector
+fprintf('      -> Upsampling WITHOUT filtering...\n'); fflush(stdout);
+x2_up_nofilt = zeros(1, length(x2_clean) * L2);
+x2_up_nofilt(1:L2:end) = x2_clean(:)' * L2;
 
-% 3.3 - Roundtrip Evaluation (Recovering the signal)
-fprintf('      -> Downsampling to recover signal and calculate metrics...\n'); fflush(stdout);
+% 3.4 - Roundtrip Evaluation (Compared against CLEAN signal)
+fprintf('      -> Downsampling to calculate metrics...\n'); fflush(stdout);
 x2_recovered = downsample_channel(x2_up_filt, L2, filt_order);
-mse_x2 = calculate_mse(x2_10k, x2_recovered);
-snr_x2 = calculate_snr(x2_10k, x2_recovered);
+mse_x2 = calculate_mse(x2_clean, x2_recovered);
+snr_x2 = calculate_snr(x2_clean, x2_recovered);
 
 fprintf(fid, 'SIGNAL 2 EVALUATION (10 kHz -> 30 kHz -> 10 kHz):\n');
 fprintf(fid, 'Mean Squared Error (MSE): %e\n', mse_x2);
 fprintf(fid, 'Signal-to-Noise Ratio (SNR): %.2f dB\n\n', snr_x2);
 
-% 3.4 - DTFTs for Plots
+% 3.5 - DTFTs for Plots
 fprintf('      -> Computing DTFTs for Plotting...\n'); fflush(stdout);
-[mag_x2_nofilt, ~] = compute_dtft(x2_up_nofilt, res);
-[mag_x2_filt, ~]   = compute_dtft(x2_up_filt, res);
-[mag_x2_rec, ~]    = compute_dtft(x2_recovered, res);
+[mag_x2_up_nofilt, ~] = compute_dtft(x2_up_nofilt, res);
+[mag_x2_up_filt, ~]   = compute_dtft(x2_up_filt, res);
+[mag_x2_rec, ~]       = compute_dtft(x2_recovered, res);
 
-% 3.5 - Fixing Signal's Energy for Plotting AND Normalizing Y-Axis
-mag_x2_nofilt = 2 * mag_x2_nofilt;  mag_x2_nofilt = mag_x2_nofilt / max(mag_x2_nofilt);
-mag_x2_filt   = 2 * mag_x2_filt;    mag_x2_filt   = mag_x2_filt / max(mag_x2_filt);
-mag_x2_rec    = 2 * mag_x2_rec;     mag_x2_rec    = mag_x2_rec / max(mag_x2_rec);
-mag_x2_orig   = 2 * mag_x2_orig;    mag_x2_orig   = mag_x2_orig / max(mag_x2_orig);
+mag_x2_up_nofilt = mag_x2_up_nofilt / max(mag_x2_up_nofilt);
+mag_x2_up_filt   = mag_x2_up_filt / max(mag_x2_up_filt);
+mag_x2_rec       = mag_x2_rec / max(mag_x2_rec);
 
-% --- PLOT 0B: Original Signal 2 Spectrum ---
-fig_orig2 = figure('Name', 'Original Signal 2 Spectrum', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
-plot(f_axis_orig2, mag_x2_orig, 'k', 'LineWidth', 1.2); grid on;
-xlim([0, fs_2/2]); ylim([0, 1.05]); % Nyquist = 5000 Hz
-set(gca, 'XTick', 0:500:fs_2/2);
-title('ORIGINAL Signal 2 Spectrum (fs = 10 kHz)');
-xlabel('Frequency (Hz)'); ylabel('Normalized Magnitude');
-print(fig_orig2, 'results/0B_Original_Spectrum_Sig2.png', '-dpng', '-r400');
+% --- PLOTS SIGNAL 2 ---
+fig2 = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_orig2, mag_x2_raw, 'k', 'LineWidth', 1.2); grid on;
+xlim([0, fs_2/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:500:fs_2/2);
+title('Espectro do sinal x2[n] original');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+print(fig2, 'results/Original_Raw_Sig2.png', '-dpng', '-r400');
 
-% --- PLOT 2A: Upsampling Filter Evaluation ---
-fig_eval2 = figure('Name', 'Signal 2: Filter Evaluation', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
-subplot(2,1,1); plot(f_axis_up, mag_x2_nofilt, 'r'); grid on;
-xlim([0, fs_target/2]); ylim([0, max(mag_x2_nofilt)*1.05]);
-set(gca, 'XTick', 0:1500:15000);
-title('Signal 2 Upsampled WITHOUT Filter'); ylabel('Magnitude (a.u.)');
+fig4 = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_orig2, mag_x2_clean, 'b', 'LineWidth', 1.2); grid on;
+xlim([0, fs_2/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:500:fs_2/2);
+title('Sinal x2[n] após a aplicação do filtro FIR passa-baixa (3 kHz)');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+print(fig4, 'results/PreFiltered_Clean_Sig2.png', '-dpng', '-r400');
 
-subplot(2,1,2); plot(f_axis_up, mag_x2_filt, 'b'); grid on;
-xlim([0, fs_target/2]); ylim([0, max(mag_x2_filt)*1.05]);
-set(gca, 'XTick', 0:1500:15000);
-title('Signal 2 Upsampled WITH FIR Filter'); xlabel('Frequency (Hz)'); ylabel('Magnitude (a.u.)');
-print(fig_eval2, 'results/2A_Eval_Upsample_Sig2.png', '-dpng', '-r400');
+fig8 = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_up, mag_x2_up_nofilt, 'r', 'LineWidth', 1.2); grid on;
+xlim([0, fs_target/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:1500:15000);
+title('Espectro do sinal x2[n] após superamostragem (L=3) sem filtragem');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+print(fig8, 'results/Upsample_NoFilt_Sig2.png', '-dpng', '-r400');
 
-% --- PLOT 2A-EXTRA: Filtered Signal ---
-fig_filt2 = figure('Name', 'Signal 2: Filtered Zoom', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
-plot(f_axis_up, mag_x2_filt, 'b', 'LineWidth', 1.2); grid on;
-xlim([0, 4500]); ylim([0, max(mag_x2_filt)*1.05]);
-set(gca, 'XTick', 0:250:4500);
-title('Signal 2 Upsampled WITH FIR Filter (ISOLATED & ZOOMED)'); xlabel('Frequency (Hz)'); ylabel('Magnitude (a.u.)');
-print(fig_filt2, 'results/2A_Extra_Filtered_Zoom_Sig2.png', '-dpng', '-r400');
+fig9 = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_up, mag_x2_up_filt, 'b', 'LineWidth', 1.2); grid on;
+xlim([0, fs_target/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:1500:15000);
+title('Espectro do sinal x2[n] após a aplicação do filtro interpolador (L=3)');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+print(fig9, 'results/Upsample_Filt_Sig2.png', '-dpng', '-r400');
 
-% --- PLOT 2B: Original vs Reconstructed ---
-fig_rec2 = figure('Name', 'Signal 2: Original vs Recovered', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
-subplot(2,1,1); plot(f_axis_orig2, mag_x2_orig, 'k'); grid on;
-xlim([0, 4500]); ylim([0, max(mag_x2_orig)*1.05]);
-set(gca, 'XTick', 0:250:4500);
-title('ORIGINAL Signal 2 Spectrum (10 kHz)'); ylabel('Magnitude (a.u.)');
-
-subplot(2,1,2); plot(f_axis_orig2, mag_x2_rec, 'b'); grid on;
-xlim([0, 4500]); ylim([0, max(mag_x2_rec)*1.05]);
-set(gca, 'XTick', 0:250:4500);
-title('RECOVERED Signal 2 Spectrum (10 kHz)'); xlabel('Frequency (Hz)'); ylabel('Magnitude (a.u.)');
-print(fig_rec2, 'results/2B_Original_vs_Recovered_Sig2.png', '-dpng', '-r400');
+fig_rec2 = figure('Visible', 'off', 'Position', [0, 0, 1600, 900]);
+subplot(2,1,1); plot(f_axis_orig2, mag_x2_clean, 'k', 'LineWidth', 1.2); grid on;
+xlim([0, fs_2/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:500:fs_2/2);
+title('Sinal x2[n] Limpo (Referência pré-reamostragem)');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+subplot(2,1,2); plot(f_axis_orig2, mag_x2_rec, 'b', 'LineWidth', 1.2); grid on;
+xlim([0, fs_2/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:500:fs_2/2);
+title('Sinal x2[n] Recuperado (Após super e subamostragem)');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+print(fig_rec2, 'results/Comparacao_Roundtrip_Sig2.png', '-dpng', '-r400');
 
 
 % =========================================================================
-% SECTION 4: FINAL COMBINATION AND NOISE REMOVAL
+% SECTION 4: FINAL COMBINATION & TIME DOMAIN
 % =========================================================================
-fprintf('\n[4/4] COMBINING SIGNALS AND REMOVING NOISE...\n'); fflush(stdout);
+fprintf('\n[4/5] COMBINING CLEAN SIGNALS...\n'); fflush(stdout);
 
 % Align vectors to the same size before summing
 min_len = min(length(x1_up_filt), length(x2_up_filt));
-final_audio_noisy = x1_up_filt(1:min_len) + x2_up_filt(1:min_len);
+final_audio = x1_up_filt(1:min_len) + x2_up_filt(1:min_len);
 
-fprintf('      -> Computing Spectrum BEFORE noise removal...\n'); fflush(stdout);
-[mag_noisy, ~] = compute_dtft(final_audio_noisy, res);
-mag_noisy = mag_noisy / max(mag_noisy); % Normalization
+fprintf('      -> Computing Final Combined Spectrum...\n'); fflush(stdout);
+[mag_final, ~] = compute_dtft(final_audio, res);
+mag_final = mag_final / max(mag_final);
 
-% --- 3 kHz LOW-PASS FILTER (NOISE REMOVAL) ---
-fprintf('      -> Applying 3 kHz Low-Pass Filter...\n'); fflush(stdout);
-fc_corte = 3000;
-Wn_corte = fc_corte / (fs_target / 2);
-h_corte = fir1(filt_order, Wn_corte);
-final_audio = filtfilt(h_corte, 1, final_audio_noisy); % Cleaned Audio
+fig_final_freq = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_axis_up, mag_final, 'k', 'LineWidth', 1.2); grid on;
+xlim([0, 5000]); ylim([0, 1.05]); set(gca, 'XTick', 0:250:5000);
+title('Espectro do Sinal Combinado Final (fs = 30 kHz)');
+xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
+print(fig_final_freq, 'results/Espectro_Combinado_Final.png', '-dpng', '-r400');
 
-fprintf('      -> Computing Spectrum AFTER noise removal...\n'); fflush(stdout);
-[mag_clean, ~] = compute_dtft(final_audio, res);
-mag_clean = mag_clean / max(mag_clean); % Normalization
-
-% --- PLOT 3: Noise Removal Proof (Wide Spectrum) ---
-fig_noise = figure('Name', 'Noise Removal Proof', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
-subplot(2,1,1); plot(f_axis_up, mag_noisy, 'r', 'LineWidth', 1.2); grid on;
-xlim([0, fs_target/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:1500:15000);
-title('COMBINED SPECTRUM BEFORE 3 kHz FILTER (Notice the High-Frequency Noise)');
-xlabel('Frequency (Hz)'); ylabel('Normalized Magnitude');
-
-subplot(2,1,2); plot(f_axis_up, mag_clean, 'b', 'LineWidth', 1.2); grid on;
-xlim([0, fs_target/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:1500:15000);
-title('COMBINED SPECTRUM AFTER 3 kHz FILTER (Noise Destroyed)');
-xlabel('Frequency (Hz)'); ylabel('Normalized Magnitude');
-print(fig_noise, 'results/3_Noise_Removal_Proof.png', '-dpng', '-r400');
-
-% =========================================================================
-% EXTRA: TIME DOMAIN PLOTS (For Report Figures)
-% =========================================================================
-fprintf('      -> Generating Time Domain Plots for Report...\n'); fflush(stdout);
-
-% Plot only a short window (e.g., 500 samples) to visualize the actual waveform
+% --- PLOT: Time Domain ---
+fprintf('      -> Generating Time Domain Plot...\n'); fflush(stdout);
 num_samples = 500;
-
-% Create time vectors in milliseconds (ms) for the physical X-axis
-t_ms_1 = (0:num_samples-1) * (1000 / fs_1);
-t_ms_2 = (0:num_samples-1) * (1000 / fs_2);
 t_ms_target = (0:num_samples-1) * (1000 / fs_target);
 
-% --- PLOT: Original Signals in Time Domain (Baseline) ---
-fig_time_orig = figure('Name', 'Original Signals (Time Domain)', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
-subplot(2,1,1); plot(t_ms_1, x1_15k(1:num_samples), 'b', 'LineWidth', 1.2); grid on;
-title('ORIGINAL Signal 1 (Time Domain - First 500 samples)'); xlabel('Time (ms)'); ylabel('Amplitude');
-subplot(2,1,2); plot(t_ms_2, x2_10k(1:num_samples), 'r', 'LineWidth', 1.2); grid on;
-title('ORIGINAL Signal 2 (Time Domain - First 500 samples)'); xlabel('Time (ms)'); ylabel('Amplitude');
-print(fig_time_orig, 'results/TimeDomain_Original_Signals.png', '-dpng', '-r400');
-
-% --- PLOT: Final Combined Audio in Time Domain ---
-fig_time_final = figure('Name', 'Final Combined Audio (Time Domain)', 'Visible', 'off', 'Position', [0, 0, 1600, 600]);
+fig10 = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
 plot(t_ms_target, final_audio(1:num_samples), 'k', 'LineWidth', 1.2); grid on;
-title('FINAL COMBINED AUDIO (Time Domain - First 500 samples)'); xlabel('Time (ms)'); ylabel('Amplitude');
-print(fig_time_final, 'results/TimeDomain_Final_Combined.png', '-dpng', '-r400');
+title('Sinal resultante da soma de x1[n] e x2[n] no domínio do tempo');
+xlabel('Tempo (ms)'); ylabel('Amplitude');
+print(fig10, 'results/TimeDomain_Final_Combined.png', '-dpng', '-r400');
+
 
 % =========================================================================
 % SECTION 5: FIR FILTERS FREQUENCY RESPONSE ANALYSIS
 % =========================================================================
 fprintf('\n[5/5] GENERATING FIR FILTER RESPONSES...\n'); fflush(stdout);
 
-% Design the exact filters used in the upsampling/downsampling functions
 Wn_1 = 1 / L1; % Cutoff for Signal 1
 Wn_2 = 1 / L2; % Cutoff for Signal 2
+Wn_3 = fc_noise / (fs_target / 2); % Equivalent Cutoff for 3 kHz noise
+
 h_filt1 = fir1(filt_order, Wn_1);
 h_filt2 = fir1(filt_order, Wn_2);
+h_filt3 = fir1(filt_order, Wn_3);
 
-% Compute frequency responses
 [H1, f_H1] = freqz(h_filt1, 1, 2048, fs_target);
 [H2, f_H2] = freqz(h_filt2, 1, 2048, fs_target);
+[H3, f_H3] = freqz(h_filt3, 1, 2048, fs_target);
 
-% Convert to Decibels (dB) and Normalize to 0 dB max
-mag_dB_H1 = 20*log10(abs(H1));  mag_dB_H1 = mag_dB_H1 - max(mag_dB_H1);
-mag_dB_H2 = 20*log10(abs(H2));  mag_dB_H2 = mag_dB_H2 - max(mag_dB_H2);
+mag_dB_H1 = 20*log10(abs(H1)); mag_dB_H1 = mag_dB_H1 - max(mag_dB_H1);
+mag_dB_H2 = 20*log10(abs(H2)); mag_dB_H2 = mag_dB_H2 - max(mag_dB_H2);
+mag_dB_H3 = 20*log10(abs(H3)); mag_dB_H3 = mag_dB_H3 - max(mag_dB_H3);
 
-% --- PLOT 4: FIR Filters Response ---
-fig_filters = figure('Name', 'FIR Filters Frequency Response', 'Visible', 'off', 'Position', [0, 0, 1600, 900]);
+% --- PLOT: Filtros Projetados ---
+fig5 = figure('Visible', 'off', 'Position', [0, 0, 1600, 900]);
 plot(f_H1, mag_dB_H1, 'b', 'LineWidth', 1.5); hold on;
-plot(f_H2, mag_dB_H2, 'r', 'LineWidth', 1.5); grid on;
+plot(f_H2, mag_dB_H2, 'r', 'LineWidth', 1.5); hold on;
+plot(f_H3, mag_dB_H3, 'g', 'LineWidth', 1.5); grid on;
 
-% Visual limits and labels
-xlim([0, fs_target/2]); ylim([-100, 10]);
-title(sprintf('FIR Filters Frequency Response (Order: %d)', filt_order));
-xlabel('Frequency (Hz)'); ylabel('Magnitude (dB)');
+xlim([0, fs_target/2]); ylim([-100, 5]);
+title(sprintf('Resposta em Frequência dos Filtros FIR Projetados (Ordem: %d)', filt_order));
+xlabel('Frequência (Hz)'); ylabel('Magnitude (dB)');
 
-% Dynamic legend based on calculated cutoff frequencies
-legend(sprintf('Filter 1 (L=%d, Cutoff: %.0f Hz)', L1, (fs_target/2)*Wn_1), ...
-       sprintf('Filter 2 (L=%d, Cutoff: %.0f Hz)', L2, (fs_target/2)*Wn_2), ...
+legend(sprintf('Filtro Interpolador x1 (Corte: %.0f Hz)', (fs_target/2)*Wn_1), ...
+       sprintf('Filtro Interpolador x2 (Corte: %.0f Hz)', (fs_target/2)*Wn_2), ...
+       sprintf('Filtro de Ruído passa-baixa (Corte: %.0f Hz)', (fs_target/2)*Wn_3), ...
        'Location', 'northeast');
 
-print(fig_filters, 'results/4_FIR_Filters_Response.png', '-dpng', '-r400');
+print(fig5, 'results/FIR_Filters_Response.png', '-dpng', '-r400');
 
-% Close the text file and finalize
 fclose(fid);
-fprintf('\n>>> PIPELINE COMPLETE! All high-res plots and metrics saved successfully. <<<\n\n'); fflush(stdout);
+fprintf('\n>>> PIPELINE COMPLETE! <<< \n'); fflush(stdout);
