@@ -262,12 +262,14 @@ h_filt3 = fir1(filt_order, Wn_3);
 [H2, f_H2] = freqz(h_filt2, 1, 2048, fs_target);
 [H3, f_H3] = freqz(h_filt3, 1, 2048, fs_target);
 
+% -------------------------------------------------------------------------
+% PLOT A: Resposta em dB dos 3 filtros (Visão Geral)
+% -------------------------------------------------------------------------
 mag_dB_H1 = 20*log10(abs(H1)); mag_dB_H1 = mag_dB_H1 - max(mag_dB_H1);
 mag_dB_H2 = 20*log10(abs(H2)); mag_dB_H2 = mag_dB_H2 - max(mag_dB_H2);
 mag_dB_H3 = 20*log10(abs(H3)); mag_dB_H3 = mag_dB_H3 - max(mag_dB_H3);
 
-% --- PLOT: Filtros Projetados ---
-fig5 = figure('Visible', 'off', 'Position', [0, 0, 1600, 900]);
+fig_filtros_db = figure('Visible', 'off', 'Position', [0, 0, 1600, 900]);
 plot(f_H1, mag_dB_H1, 'b', 'LineWidth', 1.5); hold on;
 plot(f_H2, mag_dB_H2, 'r', 'LineWidth', 1.5); hold on;
 plot(f_H3, mag_dB_H3, 'g', 'LineWidth', 1.5); grid on;
@@ -281,7 +283,28 @@ legend(sprintf('Filtro Interpolador x1 (Corte: %.0f Hz)', (fs_target/2)*Wn_1), .
        sprintf('Filtro de Ruído passa-baixa (Corte: %.0f Hz)', (fs_target/2)*Wn_3), ...
        'Location', 'northeast');
 
-print(fig5, 'results/FIR_Filters_Response.png', '-dpng', '-r400');
+print(fig_filtros_db, 'results/FIR_Filters_Response_dB.png', '-dpng', '-r400');
+
+% -------------------------------------------------------------------------
+% PLOT B: Figura 5 do Relatório (Filtro Ideal vs Utilizado em Escala Linear)
+% -------------------------------------------------------------------------
+mag_linear_H1 = abs(H1);
+
+% Criação do Filtro Ideal Teórico (Brick-wall retangular) para L=2
+f_corte_hz = (fs_target / 2) * Wn_1; % 7500 Hz
+filtro_ideal = zeros(size(f_H1));
+filtro_ideal(f_H1 <= f_corte_hz) = 1;
+
+fig5_ideal = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
+plot(f_H1, filtro_ideal, 'r', 'LineWidth', 2); hold on;
+plot(f_H1, mag_linear_H1, 'b', 'LineWidth', 1.5); grid on;
+
+xlim([0, fs_target/2]); ylim([-0.1, 1.2]);
+title(sprintf('Figura 5: Filtro Ideal x Filtro Utilizado (FIR Ordem %d)', filt_order));
+xlabel('Frequência (Hz)'); ylabel('Magnitude Linear');
+legend('Filtro Ideal (Teórico)', 'Filtro Utilizado (FIR Passa-baixa)', 'Location', 'northeast');
+
+print(fig5_ideal, 'results/Figura5_Filtro_Ideal_vs_FIR.png', '-dpng', '-r400');
 
 fclose(fid);
 fprintf('\n>>> PIPELINE COMPLETE! <<< \n'); fflush(stdout);
