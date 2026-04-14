@@ -93,7 +93,7 @@ print(fig1, 'results/Original_Raw_Sig1.png', '-dpng', '-r400');
 
 fig3 = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
 plot(f_axis_orig1, mag_x1_clean, 'b', 'LineWidth', 1.2); grid on;
-xlim([0, fs_1/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:750:fs_1/2);
+xlim([0, 3500]); ylim([0, 1.05]); set(gca, 'XTick', 0:350:3500);
 title('Sinal x1[n] após a aplicação do filtro FIR passa-baixa (3 kHz)');
 xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
 print(fig3, 'results/PreFiltered_Clean_Sig1.png', '-dpng', '-r400');
@@ -182,7 +182,7 @@ print(fig2, 'results/Original_Raw_Sig2.png', '-dpng', '-r400');
 
 fig4 = figure('Visible', 'off', 'Position', [0, 0, 1600, 600]);
 plot(f_axis_orig2, mag_x2_clean, 'b', 'LineWidth', 1.2); grid on;
-xlim([0, fs_2/2]); ylim([0, 1.05]); set(gca, 'XTick', 0:500:fs_2/2);
+xlim([0, 3500]); ylim([0, 1.05]); set(gca, 'XTick', 0:350:3500);
 title('Sinal x2[n] após a aplicação do filtro FIR passa-baixa (3 kHz)');
 xlabel('Frequência (Hz)'); ylabel('Magnitude Normalizada');
 print(fig4, 'results/PreFiltered_Clean_Sig2.png', '-dpng', '-r400');
